@@ -8,13 +8,12 @@ connections.connect()
 def time_costing(func):
     def core(*args):
         start = time.time()
-        print("start time: ", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
         print("start time: ", start)
-        func(*args)
+        res = func(*args)
         end = time.time()
-        print("end time: ", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
         print("end time: ", end)
         print(func.__name__, "time cost: ", end-start)
+        return res
     return core
 
 
@@ -42,11 +41,9 @@ def create_index(collection, field_name):
 
 
 @time_costing
-def search(collection, dim, nb, field_name):
-    nq = 5
-    vectors1 = [[random.random() for _ in range(dim)] for _ in range(nq)]
+def search(collection, query_entities, field_name):
     search_params = {"metric_type": "L2", "params": {"nprobe": 16}}
-    res = collection.search(vectors1[:nq], field_name, search_params, limit=5)
+    res = collection.search(query_entities, field_name, search_params, limit=5)
     print(res)
     print(len(res))
     for i in range(len(res)):
@@ -55,13 +52,15 @@ def search(collection, dim, nb, field_name):
 
 
 @time_costing
-def insert(collection, dim, nb):
-    for i in range(1):
-        # pk = [i for i in range(nb)]
-        vectors1 = [[random.random() for _ in range(dim)] for _ in range(nb)]
-        entities1 = [vectors1]
-        mr = collection.insert(entities1)
-        print(mr)
+def insert(collection, entities1):
+    mr = collection.insert([entities1])
+    print(mr)
+
+
+@time_costing
+def generate_entities(dim, nb) -> list:
+    vectors = [[random.random() for _ in range(dim)] for _ in range(nb)]
+    return vectors
 
 
 if __name__ == "__main__":
@@ -72,12 +71,15 @@ if __name__ == "__main__":
     coll = create_collection(collection_name, field_name, dim)
 
     for i in range(20):
-        insert(coll, dim, nb)
+        entities = generate_entities(dim, nb)
+        insert(coll, entities)
     create_index(coll, field_name)
     coll.load()
 
     for i in range(20):
-        search(coll, dim, nb, field_name)
+        nq = 5
+        query_entities = generate_entities(dim, nq)
+        search(coll, query_entities, field_name)
 
     coll.release()
     coll.drop()

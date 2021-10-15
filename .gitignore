@@ -1,6 +1,8 @@
 # generated files
 benchmark.txt
+benchmark_time.txt
 time_cost.json
+*.csv
 
 # idea
 .idea/
