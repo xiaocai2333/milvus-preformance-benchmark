@@ -68,15 +68,16 @@ if __name__ == "__main__":
     collection_name = "trace_benchmark"
     field_name = "field"
     dim = 128
-    nb = 50000
+    nb = 500000
     coll = create_collection(collection_name, field_name, dim)
 
-    for i in range(10):
+    for i in range(20):
         insert(coll, dim, nb)
     create_index(coll, field_name)
     coll.load()
 
-    for i in range(10):
+    for i in range(20):
         search(coll, dim, nb, field_name)
 
     coll.release()
+    coll.drop()
