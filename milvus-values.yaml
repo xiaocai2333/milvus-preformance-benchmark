@@ -1,0 +1,600 @@
+## Enable or disable Milvus Cluster mode
+cluster:
+  enabled: true
+
+image:
+  all:
+    repository: harbor.zilliz.cc/milvus/milvus
+    tag: zc
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ##
+    # pullSecrets:
+    #   - myRegistryKeySecretName
+
+# Global node selector
+# If set, this will apply to all milvus components
+# Individual components can be set to a different node selector
+nodeSelector:
+  node-role.kubernetes.io/benchmark: benchmark
+
+# Global tolerations
+# If set, this will apply to all milvus components
+# Individual components can be set to a different tolerations
+tolerations:
+- key: qa
+  operator: Exists
+  effect: NoSchedule
+
+# Global affinity
+# If set, this will apply to all milvus components
+# Individual components can be set to a different affinity
+affinity: {}
+
+## Expose the Milvus service to be accessed from outside the cluster (LoadBalancer service).
+## or access it from within the cluster (ClusterIP service). Set the service type and the port to serve it.
+## ref: http://kubernetes.io/docs/user-guide/services/
+##
+service:
+  type: ClusterIP
+  port: 19530
+  nodePort: ""
+  annotations: {}
+  labels: {}
+
+  ## List of IP addresses at which the Milvus service is available
+  ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+  ##
+  externalIPs: []
+  #   - externalIp1
+
+  # LoadBalancerSourcesRange is a list of allowed CIDR values, which are combined with ServicePort to
+  # set allowed inbound rules on the security group assigned to the master load balancer
+  loadBalancerSourceRanges:
+  - 0.0.0.0/0
+  # Optionally assign a known public LB IP
+  # loadBalancerIP: 1.2.3.4
+
+ingress:
+  enabled: false
+  annotations: {}
+    # Annotation example: set nginx ingress type
+    # kubernetes.io/ingress.class: nginx
+  labels: {}
+  hosts:
+    - milvus-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - milvus-example.local
+
+metrics:
+  enabled: true
+
+  serviceMonitor:
+    # Set this to `true` to create ServiceMonitor for Prometheus operator
+    enabled: false
+
+    # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
+    additionalLabels: {}
+
+log:
+  level: "debug"
+  file:
+    maxSize: 300    # MB
+    maxAge: 10    # day
+    maxBackups: 20
+  format: "text"    # text/json
+
+  persistence:
+    mountPath: "/milvus/logs"
+    ## If true, alertmanager will create/use a Persistent Volume Claim
+    ## If false, use emptyDir
+    ##
+    enabled: false
+    annotations: {}
+    #  helm.sh/resource-policy: keep
+    persistentVolumeClaim:
+      existingClaim: ""
+      ## Milvus Logs Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.
+      ##
+      storageClass:
+      accessModes: ReadWriteOnce
+      size: 10Gi
+      subPath: ""
+
+metadata:
+  rootPath: "by-dev"
+
+## pulsar message channel
+##
+msgChannel:
+  chanNamePrefix:
+    cluster: "by-dev"
+
+standalone:
+  replicas: 1  # Run standalone mode with replication disabled
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  rocksmq:
+    retentionTimeInMinutes: 10080
+    retentionSizeInMB: 0
+
+  persistence:
+    mountPath: "/var/lib/milvus"
+    ## If true, alertmanager will create/use a Persistent Volume Claim
+    ## If false, use emptyDir
+    ##
+    enabled: true
+    annotations: {}
+    #  helm.sh/resource-policy: keep
+    persistentVolumeClaim:
+      existingClaim: ""
+      ## Milvus Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.
+      ##
+      storageClass:
+      accessModes: ReadWriteOnce
+      size: 5Gi
+      subPath: ""
+
+proxy:
+  enabled: true
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  # Enable autoscaling using HorizontalPodAutoscaler
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 60
+
+rootCoordinator:
+  enabled: true
+  replicas: 1  # Run Root Coordinator mode with replication disabled
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  service:
+    port: 53100
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+queryCoordinator:
+  enabled: true
+  replicas: 1  # Run Query Coordinator mode with replication disabled
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  service:
+    port: 19531
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+queryNode:
+  enabled: true
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  # Enable autoscaling using HorizontalPodAutoscaler
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 60
+
+indexCoordinator:
+  enabled: true
+  replicas: 1   # Run Index Coordinator mode with replication disabled
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  service:
+    port: 31000
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+indexNode:
+  enabled: true
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  # Enable autoscaling using HorizontalPodAutoscaler
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 60
+
+dataCoordinator:
+  enabled: true
+  replicas: 1           # Run Data Coordinator mode with replication disabled
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  service:
+    port: 13333
+    annotations: {}
+    labels: {}
+    clusterIP: ""
+
+dataNode:
+  enabled: true
+  replicas: 1
+  resources: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  extraEnv: []
+
+  # Enable autoscaling using HorizontalPodAutoscaler
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 60
+
+## Configuration values for the minio dependency
+## ref: https://github.com/minio/charts/blob/master/README.md
+##
+
+minio:
+  nodeSelector:
+    node-role.kubernetes.io/benchmark: benchmark
+  tolerations:
+    - key: qa
+      operator: Exists
+      effect: NoSchedule
+
+  enabled: true
+  name: minio
+  mode: distributed
+  image:
+    tag: "RELEASE.2020-11-06T23-17-07Z"
+    pullPolicy: IfNotPresent
+  accessKey: minioadmin
+  secretKey: minioadmin
+  existingSecret: ""
+
+  gcsgateway:
+    enabled: false
+    replicas: 1
+    gcsKeyJson: "/etc/credentials/gcs_key.json"
+    projectId: ""
+
+  service:
+    type: ClusterIP
+    port: 9000
+
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 500Gi
+
+## Configuration values for the etcd dependency
+## ref: https://artifacthub.io/packages/helm/bitnami/etcd
+##
+
+etcd:
+  enabled: true
+  name: etcd
+  replicaCount: 3
+  image:
+    tag: "3.5.0-debian-10-r24"
+    pullPolicy: IfNotPresent
+  nodeSelector:
+    node-role.kubernetes.io/benchmark: benchmark
+  tolerations:
+    - key: qa
+      operator: Exists
+      effect: NoSchedule
+  global:
+    storageClass: local-path
+
+
+  service:
+    type: ClusterIP
+    port: 2379
+    peerPort: 2380
+
+  auth:
+    rbac:
+      enabled: false
+
+  persistence:
+    enabled: true
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  ## Enable auto compaction
+  ## compaction by every 1000 revision
+  ##
+  autoCompactionMode: revision
+  autoCompactionRetention: "1000"
+
+  ## Increase default quota to 4G
+  ##
+  extraEnvVars:
+  - name: ETCD_QUOTA_BACKEND_BYTES
+    value: "4294967296"
+
+## Configuration values for the pulsar dependency
+## ref: https://github.com/kafkaesque-io/pulsar-helm-chart
+##
+
+pulsar:
+  enabled: true
+  name: pulsar
+
+  fullnameOverride: ""
+  persistence: yes
+  enableAntiAffinity: no
+
+  image:
+    broker:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+    function:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+    zookeeper:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+    bookkeeper:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+    proxy:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+    bastion:
+      repository: apachepulsar/pulsar
+      pullPolicy: IfNotPresent
+      tag: 2.7.3
+
+  zookeeper:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 0.3
+    configData:
+      PULSAR_MEM: "\"-Xms512m -Xmx512m -Dcom.sun.management.jmxremote -Djute.maxbuffer=10485760 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:+DisableExplicitGC -XX:+PerfDisableSharedMem -Dzookeeper.forceSync=no\""
+
+  bookkeeper:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    replicaCount: 2
+    volumes:
+      journal:
+        name: journal
+        size: 100Gi
+      ledgers:
+        name: ledgers
+        size: 100Gi
+    resources:
+      requests:
+        memory: 2048Mi
+        cpu: 1
+    configData:
+      BOOKIE_MEM: "\"-Xms2048m -Xmx2048m -XX:MaxDirectMemorySize=2048m -Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.linkCapacity=1024 -XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB -XX:+ExitOnOutOfMemoryError -XX:+PerfDisableSharedMem -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCApplicationStoppedTime -XX:+PrintHeapAtGC -verbosegc -XX:G1LogLevel=finest\""
+      nettyMaxFrameSizeBytes: "104867840"
+
+  broker:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    component: broker
+    replicaCount: 1
+    resources:
+      requests:
+        memory: 4096Mi
+        cpu: 1.5
+    configData:
+      PULSAR_MEM: "\"-Xms4096m -Xmx4096m -XX:MaxDirectMemorySize=4096m -Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.linkCapacity=1024 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB -XX:+ExitOnOutOfMemoryError -XX:+PerfDisableSharedMem\""
+      maxMessageSize: "104857600"
+      defaultRetentionTimeInMinutes: "10080"
+      defaultRetentionSizeInMB: "-1"
+
+  autoRecovery:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 1
+
+  function:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    replicaCount: 1
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 0.3
+    configData:
+      BOOKIE_MEM: "\"-Xms512m -Xmx512m -XX:MaxDirectMemorySize=512m -Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.linkCapacity=1024 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB -XX:+ExitOnOutOfMemoryError -XX:+PerfDisableSharedMem\""
+
+  bastion:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+
+  proxy:
+    nodeSelector:
+      node-role.kubernetes.io/benchmark: benchmark
+    tolerations:
+      - key: qa
+        operator: Exists
+        effect: NoSchedule
+    replicaCount: 1
+    resources:
+      requests:
+        memory: 2048Mi
+        cpu: 1
+    wsResources:
+      requests:
+        memory: 512Mi
+        cpu: 0.3
+    configData:
+      PULSAR_MEM: "\"-Xms2048m -Xmx2048m -XX:MaxDirectMemorySize=2048m\""
+
+
+###################################
+# External S3
+# - these configs are only used when `externalS3.enabled` is true
+###################################
+externalS3:
+  enabled: false
+  host: ""
+  port: ""
+  accessKey: ""
+  secretKey: ""
+  useSSL: false
+  bucketName: ""
+
+###################################
+# GCS Gateway
+# - these configs are only used when `minio.gcsgateway.enabled` is true
+###################################
+externalGcs:
+  bucketName: ""
+
+###################################
+# External etcd
+# - these configs are only used when `externalEtcd.enabled` is true
+###################################
+externalEtcd:
+  enabled: false
+  ## the endpoints of the external etcd
+  ##
+  endpoints:
+    - localhost:2379
+
+###################################
+# External pulsar
+# - these configs are only used when `externalPulsar.enabled` is true
+###################################
+externalPulsar:
+  enabled: false
+  host: localhost
+  port: 6650

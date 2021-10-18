@@ -16,11 +16,10 @@ python benchmark.py > benchmark.txt
 
 ```shell
 cat /tmp/standalone.log | grep benchmark- > standalone_time.txt
-cat benchmark.txt| grep cost > benchmark_time.txt
 ```
 
 ### 4. Parse the log
 
 ```shell
-python python parse_log.py --log standalone_time.txt
+python python parse_log.py --log standalone_time.txt --sdk benchmark.txt
 ```
