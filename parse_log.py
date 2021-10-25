@@ -49,9 +49,8 @@ import pandas
 #     }
 # }
 
-def parse_log_file(f, time_dict):
-    for line in f:
-        s = str(line.strip('\n'))
+def parse_log_file(logs, time_dict):
+    for s in logs:
         s = s.replace(" ", "").replace("[", "")
         ss = s.split(']')[3:]
         operation = ss[0].split("-")[1]
@@ -124,9 +123,14 @@ def parse_log_file(f, time_dict):
 
 
 def parse_log_files(files, f2):
+    all_logs = []
     time_dict = {}
     for file in files:
-        parse_log_file(file, time_dict)
+        for line in file:
+            s = str(line.strip('\n'))
+            all_logs.append(s)
+    sorted(all_logs)
+    parse_log_file(all_logs, time_dict)
 
     with open("time_cost.json", 'w') as f:
         f.write(json.dumps(time_dict, indent=4))
