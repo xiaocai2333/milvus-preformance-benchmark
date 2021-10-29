@@ -1,7 +1,9 @@
 import random
 import time
+import gc
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
-connections.connect()
+connections.add_connection(default={"host": "10.96.215.135", "port": "19530"})
+connections.connect("default")
 
 topk = [1, 10, 100, 500, 1000]
 nq = [1, 10, 100, 500, 1000]
@@ -65,6 +67,7 @@ if __name__ == "__main__":
     for i in range(1000):
         entities = generate_entities(dim, nb)
         insert(coll, entities)
+        gc.collect()
     create_index(coll, field_name)
     coll.load()
 

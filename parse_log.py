@@ -83,13 +83,18 @@ def parse_log_file(logs, time_dict):
             for key in time_dict[operation].keys():
                 if ss[2] not in time_dict[operation][key]:
                     continue
+                if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
+                    continue
                 if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
                     queue = int(ss[4].split("=")[-1])
                     time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
                         (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
+                    print(time_dict[operation][key][ss[2]]["time"])
         elif ss[3].split("=")[-1] == "DataNode-Queue":
             for key in time_dict[operation].keys():
                 if ss[2] not in time_dict[operation][key]:
+                    continue
+                if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
                     continue
                 if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
                     queue = int(ss[4].split("=")[-1])

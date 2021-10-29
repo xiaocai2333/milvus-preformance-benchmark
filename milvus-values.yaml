@@ -5,7 +5,7 @@ cluster:
 image:
   all:
     repository: harbor.zilliz.cc/milvus/milvus
-    tag: zc
+    tag: zc-2
     pullPolicy: IfNotPresent
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
