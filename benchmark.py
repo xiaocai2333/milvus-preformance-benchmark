@@ -3,6 +3,9 @@ import time
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
 connections.connect()
 
+topk = [1, 10, 100, 500, 1000]
+nq = [1, 10, 100, 500, 1000]
+
 
 def time_costing(func):
     def core(*args):
@@ -27,7 +30,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_SQ8", "params": {"nlist": 64}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
     # print("Successfully build index")
     # print(pymilvus.utility.index_building_progress(collection.name))
@@ -37,9 +40,9 @@ def create_index(collection, field_name):
 
 
 @time_costing
-def search(collection, query_entities, field_name):
-    search_params = {"metric_type": "L2", "params": {"nprobe": 16}}
-    res = collection.search(query_entities, field_name, search_params, limit=5)
+def search(collection, query_entities, field_name, topK):
+    search_params = {"metric_type": "L2", "params": {"nprobe": 1}}
+    res = collection.search(query_entities, field_name, search_params, limit=topK)
 
 
 @time_costing
@@ -56,19 +59,25 @@ if __name__ == "__main__":
     collection_name = "trace_benchmark"
     field_name = "field"
     dim = 128
-    nb = 500000
+    nb = 100000
     coll = create_collection(collection_name, field_name, dim)
 
-    for i in range(20):
+    for i in range(1000):
         entities = generate_entities(dim, nb)
         insert(coll, entities)
     create_index(coll, field_name)
     coll.load()
 
-    for i in range(20):
-        nq = 5
-        query_entities = generate_entities(dim, nq)
-        search(coll, query_entities, field_name)
+    for i in topk:
+        for j in nq:
+            topK = i
+            nq = j
+            print("topK = ", topK, "nq = ", nq)
+            for _ in range(10):
+                query_entities = generate_entities(dim, nq)
+                search(coll, query_entities, field_name, topK)
 
     coll.release()
-    coll.drop()
+
+    coll.drop_index()
+    # coll.drop()
