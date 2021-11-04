@@ -1,8 +1,14 @@
 import argparse
 import json
+
+import numpy as np
 import pandas
+import numpy
 
 
+TopK = [1, 10, 50, 100, 1000]
+NQ = [1, 10, 100, 200, 500, 1000, 1200]
+Nprobe = [8, 16, 32, 64, 128, 256, 512]
 # After parsing, it is in json format, the example is as follows:
 # {
 #     "Insert": {
@@ -89,7 +95,7 @@ def parse_log_file(logs, time_dict):
                     queue = int(ss[4].split("=")[-1])
                     time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
                         (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
-                    print(time_dict[operation][key][ss[2]]["time"])
+                    # print(time_dict[operation][key][ss[2]]["time"])
         elif ss[3].split("=")[-1] == "DataNode-Queue":
             for key in time_dict[operation].keys():
                 if ss[2] not in time_dict[operation][key]:
@@ -133,12 +139,10 @@ def parse_log_files(files, f2):
     for file in files:
         for line in file:
             s = str(line.strip('\n'))
+            # s = str(json.loads(s))
             all_logs.append(s)
     sorted(all_logs)
     parse_log_file(all_logs, time_dict)
-
-    with open("time_cost.json", 'w') as f:
-        f.write(json.dumps(time_dict, indent=4))
 
     json_to_csv(time_dict, f2)
 
@@ -165,6 +169,10 @@ def add_E2E_time(src, f2):
 
     i = 0
     j = 0
+    # print("Insert times", len(e2e_time["Insert"]["start"]))
+    # print("Search times", len(e2e_time["Search"]["e2e"]))
+    # print("Search times", len(e2e_time["Search"]["start"]))
+    # print("Search times", len(e2e_time["Search"]["end"]))
     for operation in src.keys():
         if operation == "Insert":
             for coll in src[operation].keys():
@@ -179,25 +187,34 @@ def add_E2E_time(src, f2):
         if operation == "Search":
             for coll in src[operation].keys():
                 for row in src[operation][coll].keys():
+                    # print(src[operation][coll][row])
+                    # print(len(src[operation][coll]))
                     src[operation][coll][row]["time"]["SDK-Proxy"] = \
                         src[operation][coll][row]["time"]["start"] - e2e_time["Search"]["start"][j]
                     src[operation][coll][row]["time"]["Proxy-SDK"] = \
                         e2e_time["Search"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
                     src[operation][coll][row]["time"]["E2E"] = e2e_time["Search"]["e2e"][j]
                     j += 1
+
+    with open("time_cost.json", 'w') as f:
+        f.write(json.dumps(src, indent=4))
     return src
 
 
 def json_to_csv(src, f2):
     src = add_E2E_time(src, f2)
     for operation in src.keys():
-        field_name = []
-        data = {}
-        avg = {}
-        index = []
         for col in src[operation].keys():
+            field_name = []
+            index = []
+            k = 0
             for row in src[operation][col].keys():
+                k += 1
                 index.append(row)
+                if operation == "Search" and k == 5:
+                    index.append("avg")
+                    index.append(numpy.nan)
+                    k = 0
             for row in src[operation][col].keys():
                 for field in src[operation][col][row]["time"].keys():
                     if field in ["start", "end", "Proxy-Insert-End", "Search-Send-Result", "Search-Receive-Result",
@@ -205,23 +222,60 @@ def json_to_csv(src, f2):
                         continue
                     field_name.append(field)
                 break
+            data = {}
+            avg = {}
+            k = 0
             for field in field_name:
                 data[field] = []
                 avg[field] = 0
-
+                k = 0
                 for row in src[operation][col].keys():
                     if field == "MsgStream":
                         data[field].append(src[operation][col][row]["time"][field]["cost"])
                         avg[field] += src[operation][col][row]["time"][field]["cost"]
-                        continue
-                    data[field].append(src[operation][col][row]["time"][field])
-                    avg[field] += src[operation][col][row]["time"][field]
-            for field in field_name:
-                data[field].append(avg[field] / len(data[field]))
-            index.append("avg")
+                    else:
+                        data[field].append(src[operation][col][row]["time"][field])
+                        avg[field] += src[operation][col][row]["time"][field]
+                    k += 1
+                    if operation == "Search" and k == 5:
+                        data[field].append(avg[field] / k)
+                        data[field].append(numpy.nan)
+                        avg[field] = 0
+                        k = 0
+                if k != 0:
+                    data[field].append(avg[field] / k)
+            if k != 0:
+                index.append("avg")
+            # print("data", data)
+            # for i in data:
+            #     print("field, ", i, "length", len(data[i]))
             df = pandas.DataFrame(data=data, index=index)
             # print(df)
             df.to_csv(operation + col + '.csv', encoding='gbk')
+            file_list = []
+            l = 0
+            i = 0
+            j = 0
+            with open(operation + col + '.csv', 'r') as f:
+                for line in f:
+                    l += 1
+                    if l == 1:
+                        i = 0
+                        j = 0
+                        file_list.append(line)
+                        continue
+                    if i % 7 == 0:
+                        topK = int(j / (len(NQ)*len(Nprobe)))
+                        nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
+                        nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
+                        file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
+                    file_list.append(line)
+                    i += 1
+                    if i % 7 == 0:
+                        j += 1
+            with open(operation + '.csv', 'w') as f:
+                for line in file_list:
+                    f.write(line)
 
 
 if __name__ == "__main__":

@@ -6,9 +6,12 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 # connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
 connections.connect("default")
 
-TopK = [1, 10, 50, 100, 1000]
-NQ = [1, 10, 100, 200, 500, 1000, 1200]
-Nprobe = [8, 16, 32, 64, 128, 256, 512]
+# TopK = [1, 10, 50, 100, 1000]
+TopK = [1, 10, 100]
+# NQ = [1, 10, 100, 200, 500, 1000, 1200]
+NQ = [1, 10, 100, 500, 1000]
+# Nprobe = [8, 16, 32, 64, 128, 256, 512]
+Nprobe = [1, 128, 256]
 
 
 def time_costing(func):
@@ -46,7 +49,7 @@ def create_index(collection, field_name):
 @time_costing
 def search(collection, query_entities, field_name, topK, nprobe):
     search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
-    res = collection.search(query_entities, field_name, search_params, limit=topK)
+    res = collection.search(query_entities, field_name, search_params, limit=topK, travel_timestamp=1)
 
 
 @time_costing
@@ -85,8 +88,8 @@ if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
-    nb = 50000000
-    batch = 500000
+    nb = 5000000
+    batch = 50000
     thread_nums = 10
 
     coll = create_collection(collection_name, field_name, dim)
