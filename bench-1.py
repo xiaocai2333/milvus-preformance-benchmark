@@ -7,9 +7,9 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 connections.connect("default")
 
 # TopK = [1, 10, 50, 100, 1000]
-TopK = [1, 10, 100]
+TopK = [10]
 # NQ = [1, 10, 100, 200, 500, 1000, 1200]
-NQ = [1, 10, 100, 500, 1000]
+NQ = [100, 1000]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
 Nprobe = [1, 128, 256]
 
@@ -37,7 +37,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
     # print("Successfully build index")
     # print(pymilvus.utility.index_building_progress(collection.name))
@@ -49,7 +49,7 @@ def create_index(collection, field_name):
 @time_costing
 def search(collection, query_entities, field_name, topK, nprobe):
     search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
-    res = collection.search(query_entities, field_name, search_params, limit=topK, travel_timestamp=1)
+    res = collection.search(query_entities, field_name, search_params, limit=topK, guarantee_timestamp=1)
 
 
 @time_costing
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
-    nb = 5000000
+    nb = 10000000
     batch = 50000
     thread_nums = 10
 
@@ -109,4 +109,4 @@ if __name__ == "__main__":
     coll.release()
 
     coll.drop_index()
-    # coll.drop()
+    coll.drop()
