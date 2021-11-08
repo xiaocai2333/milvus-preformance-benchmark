@@ -7,11 +7,11 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 connections.connect("default")
 
 # TopK = [1, 10, 50, 100, 1000]
-TopK = [10]
+TopK = [1]
 # NQ = [1, 10, 100, 200, 500, 1000, 1200]
-NQ = [100, 1000]
+NQ = [1]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
-Nprobe = [1, 128, 256]
+Nprobe = [128]
 
 
 def time_costing(func):

@@ -6,9 +6,9 @@ import pandas
 import numpy
 
 
-TopK = [1, 10, 50, 100, 1000]
-NQ = [1, 10, 100, 200, 500, 1000, 1200]
-Nprobe = [8, 16, 32, 64, 128, 256, 512]
+TopK = [1, 10, 100, 500]
+NQ = [1, 10, 100, 500, 1000]
+Nprobe = [1, 128, 256]
 # After parsing, it is in json format, the example is as follows:
 # {
 #     "Insert": {
