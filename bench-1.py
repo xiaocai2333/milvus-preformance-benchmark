@@ -2,16 +2,17 @@ import random
 import threading
 import time
 import gc
+import numpy as np
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
 # connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
 connections.connect("default")
 
-# TopK = [1, 10, 50, 100, 1000]
-TopK = [1]
-# NQ = [1, 10, 100, 200, 500, 1000, 1200]
-NQ = [1]
-# Nprobe = [8, 16, 32, 64, 128, 256, 512]
-Nprobe = [128]
+TopK = [1, 10, 50, 100, 1000]
+# TopK = [1]
+NQ = [1, 10, 100, 200, 500, 1000, 1200]
+# NQ = [1]
+Nprobe = [8, 16, 32, 64, 128, 256, 512]
+# Nprobe = [128]
 
 
 def time_costing(func):
@@ -84,17 +85,29 @@ def generate_entities(dim, nb) -> list:
     return vectors
 
 
+def insert_data_from_file(coll, nb, dim,  vectors_per_file, batch_size):
+    # logger.info("Load npy file: %s end" % file_name)
+    for j in range(nb // vectors_per_file):
+        s = "%05d" % j
+        fname = "binary_" + str(dim) + "d_" + s + ".npy"
+        data = np.load(fname)
+        vectors = data.tolist()
+        insert(coll, vectors)
+
+
 if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
-    nb = 10000000
+    nb = 100000000
     batch = 50000
     thread_nums = 10
+    vectors_per_file = 100000
 
     coll = create_collection(collection_name, field_name, dim)
 
-    insert_parallel(coll, nb, dim, batch, thread_nums)
+    # insert_parallel(coll, nb, dim, batch, thread_nums)
+    insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)
     coll.load()
 
