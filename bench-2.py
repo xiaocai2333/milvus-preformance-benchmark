@@ -127,8 +127,8 @@ if __name__ == "__main__":
     for graceful_time in graceful_times:
         coll.set_graceful_time(graceful_time)
         time.sleep(10)
-        print("time tick interval = ", time_tick_interval,  "graceful time = ",
-              graceful_time, "start time = ", time.time())
+        # print("time tick interval = ", time_tick_interval,  "graceful time = ",
+        #       graceful_time, "start time = ", time.time())
         for i in range(110):
             if i == 10:
                 print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "start time = ",
