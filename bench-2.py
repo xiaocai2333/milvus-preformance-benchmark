@@ -110,6 +110,9 @@ if __name__ == "__main__":
 
     coll = create_collection(collection_name, field_name, dim)
 
+    coll.set_timetick_interval(time_tick_interval)
+    time.sleep(10)
+
     insert_parallel(coll, nb, dim, batch, thread_nums)
     # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)

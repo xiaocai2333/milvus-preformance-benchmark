@@ -23,3 +23,20 @@ cat /tmp/standalone.log | grep benchmark- > standalone_time.txt
 ```shell
 python python parse_log.py --log standalone_time.txt --sdk benchmark.txt
 ```
+
+
+## Test with graceful time
+
+### 1. 启动 Milvus 服务
+
+### 2. 运行 python 脚本
+
+bench-2.py 是测试 Proxy interval = 100ms 的情况，同时要调整 rootcoord 的 interval， 默认是 100ms。
+bench-3.py 是测试 Proxy interval = 500ms 的情况。
+Proxy 的 time tick interval 是通过接口 set_time_tick_interval 设置的，脚本里有例子，有可能被注释了，看情况使用。
+
+### 3.注意
+
+插入的数据是要从文件中读取还是自动生成，文件读取用 insert_data_from_file 方法，注意设置 pod 对应的目录。
+如果自动生成用 insert_parallel， （实际上并不是并发插入）
+测试结果的时间没有统计脚本，还没写，只能手动计算，嘿嘿！
