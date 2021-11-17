@@ -14,6 +14,9 @@ NQ = [1]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
 Nprobe = [128]
 
+time_tick_interval = 500
+graceful_times = [0, 50, 100, 300, 500, 1000, 5000]
+
 
 def time_costing(func):
     def core(*args):
@@ -48,9 +51,10 @@ def create_index(collection, field_name):
 
 
 @time_costing
-def search(collection, query_entities, field_name, topK, nprobe):
+def search(collection, query_entities, field_name, topK, nprobe, guarantee_timestamp=0):
     search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
-    res = collection.search(query_entities, field_name, search_params, limit=topK, guarantee_timestamp=1)
+    res = collection.search(query_entities, field_name, search_params, limit=topK,
+                            guarantee_timestamp=guarantee_timestamp)
 
 
 @time_costing
@@ -106,20 +110,42 @@ if __name__ == "__main__":
 
     coll = create_collection(collection_name, field_name, dim)
 
-    # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
+    # coll.set_timetick_interval(time_tick_interval)
+    time.sleep(10)
+
+    insert_parallel(coll, nb, dim, batch, thread_nums)
+    # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)
     coll.load()
-
+    print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "start time = ", time.time())
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
-                for _ in range(5):
+                for _ in range(50):
                     query_entities = generate_entities(dim, nq)
-                    search(coll, query_entities, field_name, topK, nprobe)
+                    search(coll, query_entities, field_name, topK, nprobe, 1)
+    print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "end time = ", time.time())
+
+    for graceful_time in graceful_times:
+        coll.set_graceful_time(graceful_time)
+        time.sleep(10)
+        # print("time tick interval = ", time_tick_interval,  "graceful time = ",
+        #       graceful_time, "start time = ", time.time())
+        for i in range(110):
+            if i == 10:
+                print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "start time = ",
+                      time.time())
+            for topK in TopK:
+                for nq in NQ:
+                    for nprobe in Nprobe:
+                        query_entities = generate_entities(dim, nq)
+                        search(coll, query_entities, field_name, topK, nprobe, 0)
+        print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "end time = ",
+              time.time())
+
 
     coll.release()
 
-    coll.drop_index()
+    # coll.drop_index()
     coll.drop()

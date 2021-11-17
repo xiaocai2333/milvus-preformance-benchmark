@@ -5,8 +5,8 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 # connections.add_connection(default={"host": "10.96.215.135", "port": "19530"})
 connections.connect("default")
 
-topk = [1, 10, 100, 500, 1000]
-nq = [1, 10, 100, 500, 1000]
+TOPK = [10]
+NQ = [10]
 
 
 def time_costing(func):
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     collection_name = "trace_benchmark"
     field_name = "field"
     dim = 128
-    nb = 500000
+    nb = 50000
     coll = create_collection(collection_name, field_name, dim)
 
     for i in range(20):
@@ -70,18 +70,18 @@ if __name__ == "__main__":
         gc.collect()
     create_index(coll, field_name)
     # create_index(coll, field_name)
-    # coll.load()
+    coll.load()
 
-    # for i in topk:
-    #     for j in nq:
-    #         topK = i
-    #         nq = j
-    #         print("topK = ", topK, "nq = ", nq)
-    #         for _ in range(10):
-    #             query_entities = generate_entities(dim, nq)
-    #             search(coll, query_entities, field_name, topK)
+    for i in TOPK:
+        for j in NQ:
+            topK = i
+            nq = j
+            print("topK = ", topK, "nq = ", nq)
+            for _ in range(10):
+                query_entities = generate_entities(dim, nq)
+                search(coll, query_entities, field_name, topK)
 
-    # coll.release()
+    coll.release()
 
     # coll.drop_index()
     coll.drop()
