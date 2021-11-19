@@ -141,6 +141,7 @@ if __name__ == "__main__":
                     for nprobe in Nprobe:
                         query_entities = generate_entities(dim, nq)
                         search(coll, query_entities, field_name, topK, nprobe, 0)
+                        time.sleep(random.uniform(0, 0.1))
         print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "end time = ",
               time.time())
 

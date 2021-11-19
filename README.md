@@ -21,7 +21,7 @@ cat /tmp/standalone.log | grep benchmark- > standalone_time.txt
 ### 4. Parse the log
 
 ```shell
-python python parse_log.py --log standalone_time.txt --sdk benchmark.txt
+python parse_log.py --log standalone_time.txt --sdk benchmark.txt
 ```
 
 
@@ -39,4 +39,14 @@ Proxy 的 time tick interval 是通过接口 set_time_tick_interval 设置的，
 
 插入的数据是要从文件中读取还是自动生成，文件读取用 insert_data_from_file 方法，注意设置 pod 对应的目录。
 如果自动生成用 insert_parallel， （实际上并不是并发插入）
-测试结果的时间没有统计脚本，还没写，只能手动计算，嘿嘿！
+parse_log3.py 解析bench-2.py 和 bench-3.py 的运行结果
+
+
+## 运行解析脚本
+
+### 运行解析脚本
+
+```shell
+python parse_log3.py --file sdk.log --output text.csv
+```
+sdk.log 文件代表测试是sdk打印的log， text.csv 表示放统计数据的文件（最好是csv）

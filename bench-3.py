@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     coll = create_collection(collection_name, field_name, dim)
 
-    # coll.set_timetick_interval(time_tick_interval)
+    coll.set_timetick_interval(time_tick_interval)
     time.sleep(10)
 
     insert_parallel(coll, nb, dim, batch, thread_nums)
@@ -141,9 +141,9 @@ if __name__ == "__main__":
                     for nprobe in Nprobe:
                         query_entities = generate_entities(dim, nq)
                         search(coll, query_entities, field_name, topK, nprobe, 0)
+                        time.sleep(random.uniform(0, 0.5))
         print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "end time = ",
               time.time())
-
 
     coll.release()
 
