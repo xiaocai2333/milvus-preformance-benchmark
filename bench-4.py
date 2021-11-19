@@ -73,6 +73,9 @@ def gen_data_and_insert(collection, nb, batch, dim, partition):
 
 def insert_parallel(collection, partition, nb, dim, batch, speed):
     for i in range(int(nb/batch)):
+        global stop_insert
+        if stop_insert:
+            return
         entities = generate_entities(dim, batch)
         insert_start = time.time()
         insert(collection, entities, partition)
@@ -136,17 +139,18 @@ if __name__ == "__main__":
     # for nb in nbs:
     #     print("nb = ", nb)
     for graceful_time in graceful_times:
+        stop_insert = False
         coll = create_collection(collection_name, field_name, dim)
         partition_name = "cat"
         coll.create_partition(partition_name)
-        insert_parallel(coll, None, nb, dim, batch, speed)
+        insert_parallel(coll, None, 1000, dim, 1000, speed)
         coll.set_graceful_time(graceful_time)
         time.sleep(10)
         coll.load()
 
         threads = []
-        t = threading.Thread(target=insert_parallel, args=(coll, partition_name, nb, dim, batch, speed))
-        threads.append(t)
+        t1 = threading.Thread(target=insert_parallel, args=(coll, partition_name, nb, dim, batch, speed))
+        threads.append(t1)
 
         t2 = threading.Thread(target=graceful_time_search, args=(coll, field_name, graceful_time))
         threads.append(t2)
@@ -154,8 +158,8 @@ if __name__ == "__main__":
         for t in threads:
             t.start()
 
-        for t in threads:
-            t.join()
+        t2.join()
+        stop_insert = True
 
         coll.release()
         coll.drop()
