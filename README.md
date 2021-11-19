@@ -34,6 +34,14 @@ python parse_log.py --log standalone_time.txt --sdk benchmark.txt
 bench-2.py 是测试 Proxy interval = 100ms 的情况，同时要调整 rootcoord 的 interval， 默认是 100ms。
 bench-3.py 是测试 Proxy interval = 500ms 的情况。
 Proxy 的 time tick interval 是通过接口 set_time_tick_interval 设置的，脚本里有例子，有可能被注释了，看情况使用。
+bench-4.py 是测试边插入边查询的测试
+
+```shell
+python bench-4.py --speed 1 --num 100000 --batch 1000 > haha.log
+```
+speed: 插入每个batch的时间， 单位是s，可传入浮点数
+num： 插入的纵数据量
+batch： 每个batch的数据量
 
 ### 3.注意
 

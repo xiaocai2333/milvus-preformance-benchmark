@@ -1,3 +1,4 @@
+import argparse
 import random
 import threading
 import time
@@ -58,31 +59,28 @@ def search(collection, query_entities, field_name, topK, nprobe, guarantee_times
 
 
 @time_costing
-def insert(collection, entities):
-    mr = collection.insert([entities])
+def insert(collection, entities, partition):
+    mr = collection.insert([entities], partition_name=partition)
     print(mr)
 
 
-def gen_data_and_insert(collection, nb, batch, dim):
+def gen_data_and_insert(collection, nb, batch, dim, partition):
     for i in range(int(nb/batch)):
         entities = generate_entities(dim, nb)
-        insert(collection, entities)
+        insert(collection, entities, partition)
         gc.collect()
 
 
-def insert_parallel(collection, nb, dim, batch):
-    # threads = []
-    # for i in range(thread_num):
-    #     x = threading.Thread(target=gen_data_and_insert, args=(collection, int(nb/thread_num), batch, dim))
-    #     threads.append(x)
-    #     x.start()
-    # for t in threads:
-    #     t.join()
+def insert_parallel(collection, partition, nb, dim, batch, speed):
     for i in range(int(nb/batch)):
         entities = generate_entities(dim, batch)
-        insert(collection, entities)
+        insert_start = time.time()
+        insert(collection, entities, partition)
+        insert_end = time.time()
+        if speed < (insert_end-insert_start):
+            raise Exception("Speed if too small")
+        time.sleep(speed-(insert_end-insert_start))
         gc.collect()
-        time.sleep(10/(nb/batch))
 
 
 def generate_entities(dim, nb) -> list:
@@ -117,36 +115,47 @@ def graceful_time_search(coll, field_name, graceful_time):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="your script description")  # description参数可以用于插入描述脚本用途的信息，可以为空
+    parser.add_argument('--speed', '-s', nargs=1, type=float, help='insert speed, :s')
+    parser.add_argument('--num', '-n', nargs=1, type=int, help='insert total num')
+    parser.add_argument('--batch', '-b', nargs=1, type=int, help='insert batch num')
+    args = parser.parse_args()
+
+    batch = args.batch[0]
+    speed = args.speed[0]
+    nb = args.num[0]
+
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
     nbs = [100000, 200000, 400000, 600000, 800000, 1000000]
-    batch = 10000
     thread_nums = 10
     vectors_per_file = 100000
 
     # coll.set_timetick_interval(time_tick_interval)
-    for nb in nbs:
-        print("nb = ", nb)
-        for graceful_time in graceful_times:
-            coll = create_collection(collection_name, field_name, dim)
-            insert_parallel(coll, 1000, dim, 1000)
-            coll.set_graceful_time(graceful_time)
-            time.sleep(10)
-            coll.load()
+    # for nb in nbs:
+    #     print("nb = ", nb)
+    for graceful_time in graceful_times:
+        coll = create_collection(collection_name, field_name, dim)
+        partition_name = "cat"
+        coll.create_partition(partition_name)
+        insert_parallel(coll, None, nb, dim, batch, speed)
+        coll.set_graceful_time(graceful_time)
+        time.sleep(10)
+        coll.load()
 
-            threads = []
-            t = threading.Thread(target=insert_parallel, args=(coll, nb, dim, batch))
-            threads.append(t)
+        threads = []
+        t = threading.Thread(target=insert_parallel, args=(coll, partition_name, nb, dim, batch, speed))
+        threads.append(t)
 
-            t2 = threading.Thread(target=graceful_time_search, args=(coll, field_name, graceful_time))
-            threads.append(t2)
+        t2 = threading.Thread(target=graceful_time_search, args=(coll, field_name, graceful_time))
+        threads.append(t2)
 
-            for t in threads:
-                t.start()
+        for t in threads:
+            t.start()
 
-            for t in threads:
-                t.join()
+        for t in threads:
+            t.join()
 
-            coll.release()
-            coll.drop()
+        coll.release()
+        coll.drop()
