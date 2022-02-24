@@ -12,7 +12,7 @@ TopK = [1]
 # NQ = [1, 10, 100, 200, 500, 1000, 1200]
 NQ = [1]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
-Nprobe = [128]
+Nprobe = [1, 128]
 
 
 def time_costing(func):
@@ -99,15 +99,15 @@ if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
-    nb = 1000000
+    nb = 100000
     batch = 50000
     thread_nums = 10
     vectors_per_file = 100000
 
     coll = create_collection(collection_name, field_name, dim)
 
-    # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
+    insert_parallel(coll, nb, dim, batch, thread_nums)
+    # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)
     coll.load()
 
@@ -115,11 +115,13 @@ if __name__ == "__main__":
         for nq in NQ:
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
-                for _ in range(5):
+                start = time.time()
+                for _ in range(100):
                     query_entities = generate_entities(dim, nq)
                     search(coll, query_entities, field_name, topK, nprobe)
 
-    coll.release()
+                end = time.time()
+                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "tootal time = ",
+                      end - start, "avg time = ", (end-start)/100)
 
-    coll.drop_index()
     coll.drop()

@@ -7,12 +7,12 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 # connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
 connections.connect("default")
 
-# TopK = [1, 10, 50, 100, 1000]
-TopK = [1]
-# NQ = [1, 10, 100, 200, 500, 1000, 1200]
-NQ = [10]
+TopK = [1, 10, 50, 100, 1000]
+# TopK = [1000]
+NQ = [1, 10, 100, 200, 500, 1000, 1200]
+# NQ = [1200]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
-Nprobe = [8]
+Nprobe = [16, 32]
 
 time_tick_interval = 500
 graceful_times = [0, 50, 100, 300, 500, 1000, 5000]
@@ -82,6 +82,7 @@ def insert_parallel(collection, nb, dim, batch, thread_num=1):
         entities = generate_entities(dim, batch)
         insert(collection, entities)
         gc.collect()
+        print("insert rows", collection.num_entities)
 
 
 def generate_entities(dim, nb) -> list:
@@ -103,29 +104,37 @@ if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
     dim = 128
-    nb = 10000
+    nb = 10000000
     batch = 50000
     thread_nums = 10
     vectors_per_file = 100000
 
+    print("create collection ...")
     coll = create_collection(collection_name, field_name, dim)
 
     # coll.set_timetick_interval(time_tick_interval)
     # time.sleep(10)
 
-    create_index(coll, field_name)
+    # create_index(coll, field_name)
 
+    print("insert data ...")
     insert_parallel(coll, nb, dim, batch, thread_nums)
     # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
+    time.sleep(3600*2)
+    print("create index ...")
     create_index(coll, field_name)
+    print("load collection ...")
     coll.load()
+    print("load collection done ...")
+    time.sleep(30)
     print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "start time = ", time.time())
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
-                query_entities = generate_entities(dim, nq)
-                search(coll, query_entities, field_name, topK, nprobe, 1)
+                for i in range(10):
+                    print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
+                    query_entities = generate_entities(dim, nq)
+                    search(coll, query_entities, field_name, topK, nprobe, 1)
     print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "end time = ", time.time())
 
     # for graceful_time in graceful_times:
@@ -145,8 +154,9 @@ if __name__ == "__main__":
     #                     time.sleep(random.uniform(0, 0.5))
     #     print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "end time = ",
     #           time.time())
-
+    print("release collection ...")
     coll.release()
 
     # coll.drop_index()
+    print("drop collection ...")
     coll.drop()
