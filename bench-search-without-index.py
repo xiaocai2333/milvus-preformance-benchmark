@@ -95,7 +95,7 @@ if __name__ == "__main__":
     coll = create_collection(collection_name, field_name, dim)
 
     insert_parallel(coll, nb, dim, batch, thread_nums)
-    create_index(coll, field_name)
+    # create_index(coll, field_name)
     coll.load()
 
     for topK in TopK:

@@ -141,7 +141,11 @@ def parse_log_files(files, f2):
             s = str(line.strip('\n'))
             # s = str(json.loads(s))
             all_logs.append(s)
-    sorted(all_logs)
+    # all_logs.sort()
+    # all_logs = sorted(all_logs)
+    with open("log.txt", 'w') as f:
+        for log in all_logs:
+            f.write(log+"\n")
     parse_log_file(all_logs, time_dict)
 
     json_to_csv(time_dict, f2)
