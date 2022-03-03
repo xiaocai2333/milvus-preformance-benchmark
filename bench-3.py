@@ -9,10 +9,13 @@ connections.connect("default")
 
 # TopK = [1, 10, 50, 100, 1000]
 TopK = [1]
-NQ = [1, 10, 100, 200, 500, 1000, 1200]
-# NQ = [1]
+# NQ = [1, 10, 100, 200, 500, 1000, 1200]
+NQ = [10]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
-Nprobe = [16, 32]
+Nprobe = [8]
+
+time_tick_interval = 500
+graceful_times = [0, 50, 100, 300, 500, 1000, 5000]
 
 
 def time_costing(func):
@@ -48,9 +51,10 @@ def create_index(collection, field_name):
 
 
 @time_costing
-def search(collection, query_entities, field_name, topK, nprobe):
+def search(collection, query_entities, field_name, topK, nprobe, guarantee_timestamp=0):
     search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
-    res = collection.search(query_entities, field_name, search_params, limit=topK, guarantee_timestamp=1)
+    res = collection.search(query_entities, field_name, search_params, limit=topK,
+                            guarantee_timestamp=guarantee_timestamp)
 
 
 @time_costing
@@ -98,30 +102,51 @@ def insert_data_from_file(coll, nb, dim,  vectors_per_file, batch_size):
 if __name__ == "__main__":
     collection_name = "bench_1"
     field_name = "field"
-    dim = 768
-    nb = 5000000
+    dim = 128
+    nb = 10000
     batch = 50000
     thread_nums = 10
     vectors_per_file = 100000
 
     coll = create_collection(collection_name, field_name, dim)
 
+    # coll.set_timetick_interval(time_tick_interval)
+    # time.sleep(10)
+
+    create_index(coll, field_name)
+
     insert_parallel(coll, nb, dim, batch, thread_nums)
     # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)
     coll.load()
-
+    print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "start time = ", time.time())
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
-                start = time.time()
-                for _ in range(100):
-                    query_entities = generate_entities(dim, nq)
-                    search(coll, query_entities, field_name, topK, nprobe)
+                query_entities = generate_entities(dim, nq)
+                search(coll, query_entities, field_name, topK, nprobe, 1)
+    print("time tick interval = ", time_tick_interval, "guarantee_timestamp = ", 1, "end time = ", time.time())
 
-                end = time.time()
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "tootal time = ",
-                      end - start, "avg time = ", (end-start)/100)
+    # for graceful_time in graceful_times:
+    #     coll.set_graceful_time(graceful_time)
+    #     time.sleep(10)
+    #     # print("time tick interval = ", time_tick_interval,  "graceful time = ",
+    #     #       graceful_time, "start time = ", time.time())
+    #     for i in range(110):
+    #         if i == 10:
+    #             print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "start time = ",
+    #                   time.time())
+    #         for topK in TopK:
+    #             for nq in NQ:
+    #                 for nprobe in Nprobe:
+    #                     query_entities = generate_entities(dim, nq)
+    #                     search(coll, query_entities, field_name, topK, nprobe, 0)
+    #                     time.sleep(random.uniform(0, 0.5))
+    #     print("time tick interval = ", time_tick_interval, "graceful time = ", graceful_time, "end time = ",
+    #           time.time())
 
+    coll.release()
+
+    # coll.drop_index()
     coll.drop()

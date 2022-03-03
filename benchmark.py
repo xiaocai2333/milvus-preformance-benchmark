@@ -2,11 +2,11 @@ import random
 import time
 import gc
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
-connections.add_connection(default={"host": "10.96.215.135", "port": "19530"})
+# connections.add_connection(default={"host": "10.96.215.135", "port": "19530"})
 connections.connect("default")
 
-topk = [1, 10, 100, 500, 1000]
-nq = [1, 10, 100, 500, 1000]
+TOPK = [10]
+NQ = [10]
 
 
 def time_costing(func):
@@ -32,7 +32,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
     # print("Successfully build index")
     # print(pymilvus.utility.index_building_progress(collection.name))
@@ -61,18 +61,19 @@ if __name__ == "__main__":
     collection_name = "trace_benchmark"
     field_name = "field"
     dim = 128
-    nb = 100000
+    nb = 50000
     coll = create_collection(collection_name, field_name, dim)
 
-    for i in range(1000):
+    for i in range(20):
         entities = generate_entities(dim, nb)
         insert(coll, entities)
         gc.collect()
     create_index(coll, field_name)
+    # create_index(coll, field_name)
     coll.load()
 
-    for i in topk:
-        for j in nq:
+    for i in TOPK:
+        for j in NQ:
             topK = i
             nq = j
             print("topK = ", topK, "nq = ", nq)
@@ -82,5 +83,5 @@ if __name__ == "__main__":
 
     coll.release()
 
-    coll.drop_index()
-    # coll.drop()
+    # coll.drop_index()
+    coll.drop()
