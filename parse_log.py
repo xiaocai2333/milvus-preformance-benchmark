@@ -55,10 +55,12 @@ Nprobe = [1, 128, 256]
 #     }
 # }
 
+
 def parse_log_file(logs, time_dict):
     for s in logs:
         s = s.replace(" ", "").replace("[", "")
         ss = s.split(']')[3:]
+        print(ss)
         operation = ss[0].split("-")[1]
         if operation not in time_dict.keys():
             time_dict[operation] = {}
@@ -140,7 +142,8 @@ def parse_log_files(files, f2):
         for line in file:
             s = str(line.strip('\n'))
             # s = str(json.loads(s))
-            all_logs.append(s)
+            if "benchmark-search" in s:
+                all_logs.append(s)
     # all_logs.sort()
     # all_logs = sorted(all_logs)
     with open("log.txt", 'w') as f:
