@@ -4,7 +4,8 @@ import time
 import gc
 import numpy as np
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
-from config import TopK, NQ, Nprobe, NumberOfTestRun, collection_name, field_name, dim, nb, batch, thread_nums
+from config import dim, nb, batch, thread_nums, vectors_per_file, collection_name, field_name
+
 
 # connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
 connections.connect("default")
@@ -29,23 +30,6 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
     collection = Collection(name=collection_name, schema=schema)
     return collection
-
-
-@time_costing
-def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
-    collection.create_index(field_name, default_index)
-    # print("Successfully build index")
-    # print(pymilvus.utility.index_building_progress(collection.name))
-
-    # collection.drop_index()
-    # print("Successfully drop index")
-
-
-@time_costing
-def search(collection, query_entities, field_name, topK, nprobe):
-    search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
-    res = collection.search(query_entities, field_name, search_params, limit=topK, guarantee_timestamp=1)
 
 
 @time_costing
@@ -90,26 +74,15 @@ def insert_data_from_file(coll, nb, dim,  vectors_per_file, batch_size):
         insert(coll, vectors)
 
 
+@time_costing
+def create_index(collection, field_name):
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
+    collection.create_index(field_name, default_index)
+
+
 if __name__ == "__main__":
     coll = create_collection(collection_name, field_name, dim)
-
     create_index(coll, field_name)
     insert_parallel(coll, nb, dim, batch, thread_nums)
     # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)
-    coll.load()
-
-    for topK in TopK:
-        for nq in NQ:
-            for nprobe in Nprobe:
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
-                start = time.time()
-                for _ in range(NumberOfTestRun):
-                    query_entities = generate_entities(dim, nq)
-                    search(coll, query_entities, field_name, topK, nprobe)
-
-                end = time.time()
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "tootal time = ",
-                      end - start, "avg time = ", (end-start)/NumberOfTestRun)
-
-    coll.drop()

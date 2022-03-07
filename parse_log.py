@@ -1,16 +1,11 @@
 import argparse
 import json
-
 import numpy as np
 import pandas
 import numpy
+from config import TopK, NQ, Nprobe, NumberOfTestRun
 
 
-# TopK = [1, 10, 100, 500]
-TopK = [1]
-NQ = [20, 30, 40, 50, 60, 70, 80, 90]
-# Nprobe = [1, 128, 256]
-Nprobe = [16, 32]
 # After parsing, it is in json format, the example is as follows:
 # {
 #     "Insert": {
@@ -71,7 +66,11 @@ Nprobe = [16, 32]
 #         }
 #     }
 # }
-# ss = ['benchmark-search', 'Role=proxy', 'Step=PreExecute', 'CollectionID=431651428837035329', 'MsgID=431651867194344666', 'Duration=5', '']
+
+# ss = ['benchmark-search', 'Role=proxy', 'Step=PreExecute', 'CollectionID=431651428837035329',
+# 'MsgID=431651867194344666', 'Duration=5', '']
+
+
 def parse_log_file(logs, time_dict):
     for s in logs:
         s = s.replace(" ", "").replace("[", "")
@@ -94,8 +93,8 @@ def parse_log_file(logs, time_dict):
                 time_dict[operation][coll][msgID][duration]["MessageStorage"] = {"start": float(ss[5].split("=")[-1])}
         elif step == "QueryNode-Receive":
             time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
-            time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] - \
-            time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"]
+            time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                                                                                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
         else:
             time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1])
         # if int(ss[1].split("=")[-1]) not in [0, 1]:
@@ -253,7 +252,7 @@ def json_to_csv(src, f2):
                 if k == 1:
                     continue
                 index.append(row)
-                if operation == "search" and k == 100:
+                if operation == "search" and k == NumberOfTestRun:
                     index.append("avg")
                     index.append(numpy.nan)
                     k = 0
@@ -282,7 +281,7 @@ def json_to_csv(src, f2):
                         data[field].append(src[operation][col][row]["Duration"][field])
                         avg[field] += src[operation][col][row]["Duration"][field]
                     k += 1
-                    if operation == "search" and k == 100:
+                    if operation == "search" and k == NumberOfTestRun:
                         data[field].append(avg[field] / (k-1))
                         data[field].append(numpy.nan)
                         avg[field] = 0
@@ -292,9 +291,9 @@ def json_to_csv(src, f2):
             if k != 0:
                 index.append("avg")
             # print("data", data)
-            for i in data:
-                print("field, ", i, "length", len(data[i]))
-            print("index", len(index))
+            # for i in data:
+            #     print("field, ", i, "length", len(data[i]))
+            # print("index", len(index))
             df = pandas.DataFrame(data=data, index=index)
             # print(df)
             df.to_csv(operation + col + '.csv', encoding='gbk')
@@ -310,14 +309,14 @@ def json_to_csv(src, f2):
                         j = 0
                         file_list.append(line)
                         continue
-                    if i % 101 == 0:
+                    if i % (NumberOfTestRun+1) == 0:
                         topK = int(j / (len(NQ)*len(Nprobe)))
                         nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
                         nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
-                    if i % 101 == 0:
+                    if i % (NumberOfTestRun+1) == 0:
                         j += 1
             with open(operation + '.csv', 'w') as f:
                 for line in file_list:
