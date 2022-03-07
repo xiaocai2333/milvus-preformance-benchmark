@@ -4,6 +4,7 @@ benchmark_time.txt
 time_cost.json
 *.csv
 *.log
+*.txt
 
 # idea
 .idea/
