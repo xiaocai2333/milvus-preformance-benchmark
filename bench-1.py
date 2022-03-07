@@ -9,7 +9,8 @@ connections.connect("default")
 
 # TopK = [1, 10, 50, 100, 1000]
 TopK = [1]
-NQ = [1, 10, 100, 200, 500, 1000, 1200]
+#NQ = [1, 10, 100, 200, 500, 1000, 1200]
+NQ = [20, 30, 40, 50, 60, 70, 80, 90]
 # NQ = [1]
 # Nprobe = [8, 16, 32, 64, 128, 256, 512]
 Nprobe = [16, 32]
@@ -106,6 +107,7 @@ if __name__ == "__main__":
 
     coll = create_collection(collection_name, field_name, dim)
 
+    create_index(coll, field_name)
     insert_parallel(coll, nb, dim, batch, thread_nums)
     # insert_data_from_file(coll, nb, dim, vectors_per_file, batch)
     create_index(coll, field_name)

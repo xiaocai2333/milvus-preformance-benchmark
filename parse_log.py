@@ -6,9 +6,11 @@ import pandas
 import numpy
 
 
-TopK = [1, 10, 100, 500]
-NQ = [1, 10, 100, 500, 1000]
-Nprobe = [1, 128, 256]
+# TopK = [1, 10, 100, 500]
+TopK = [1]
+NQ = [20, 30, 40, 50, 60, 70, 80, 90]
+# Nprobe = [1, 128, 256]
+Nprobe = [16, 32]
 # After parsing, it is in json format, the example is as follows:
 # {
 #     "Insert": {
@@ -55,84 +57,115 @@ Nprobe = [1, 128, 256]
 #     }
 # }
 
-
+# "Search": {
+#     "CollectionID=123": {
+#         "MsgID=456": {
+#             "Duration": {
+#                 "Pulsar": {
+#                     "start": 123
+#                     "end": 124
+#                     "duration": 1
+#                 },
+#                 
+#             }
+#         }
+#     }
+# }
+# ss = ['benchmark-search', 'Role=proxy', 'Step=PreExecute', 'CollectionID=431651428837035329', 'MsgID=431651867194344666', 'Duration=5', '']
 def parse_log_file(logs, time_dict):
     for s in logs:
         s = s.replace(" ", "").replace("[", "")
         ss = s.split(']')[3:]
-        print(ss)
         operation = ss[0].split("-")[1]
         if operation not in time_dict.keys():
             time_dict[operation] = {}
-
-        if int(ss[1].split("=")[-1]) not in [0, 1]:
-            if ss[1] not in time_dict[operation].keys() and int(ss[1].split("=")[-1]) != 1:
-                time_dict[operation][ss[1]] = {}
-            if ss[2] not in time_dict[operation][ss[1]].keys():
-                time_dict[operation][ss[1]][ss[2]] = {}
-            if "time" not in time_dict[operation][ss[1]][ss[2]].keys():
-                time_dict[operation][ss[1]][ss[2]]["time"] = {}
-            if "MsgStream" not in time_dict[operation][ss[1]][ss[2]]["time"]:
-                time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"] = {}
-        if ss[3].split("=")[-1] == "MsgStream-send":
-            time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"]["start"] = int(ss[4].split("=")[-1])
-        elif ss[3].split("=")[-1] == "MsgStream-receive":
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                if operation == "Search" and "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-                    continue
-                if "start" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-                    end = int(ss[4].split("=")[-1])
-                    time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"] = end
-                    time_dict[operation][key][ss[2]]["time"]["MsgStream"]["cost"] = \
-                        (end - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["start"]) / 1000000.0
-        elif ss[3].split("=")[-1] == "QueryNode-queue":
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
-                    continue
-                if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-                    queue = int(ss[4].split("=")[-1])
-                    time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
-                        (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
-                    # print(time_dict[operation][key][ss[2]]["time"])
-        elif ss[3].split("=")[-1] == "DataNode-Queue":
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
-                    continue
-                if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-                    queue = int(ss[4].split("=")[-1])
-                    time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
-                        (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
-        elif ss[3].split("=")[-1] == "Proxy-Receive-Request":
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                time_dict[operation][key][ss[2]]["time"]["start"] = int(ss[4].split("=")[-1]) / 1000000.0
-        elif ss[3].split("=")[-1] == "Insert-End":
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                if "start" in time_dict[operation][key][ss[2]]["time"].keys():
-                    end = int(ss[4].split("=")[-1]) / 1000000.0
-                    time_dict[operation][key][ss[2]]["time"]["end"] = end
-                    time_dict[operation][key][ss[2]]["time"]["Insert-cost"] = \
-                        end - time_dict[operation][key][ss[2]]["time"]["start"]
-        elif ss[3].split("=")[-1] == "Search-Receive-Result":
-            end = int(ss[4].split("=")[-1])
-            time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = end / 1000000.0
-            for key in time_dict[operation].keys():
-                if ss[2] not in time_dict[operation][key]:
-                    continue
-                if "Search-Send-Result" in time_dict[operation][key][ss[2]]["time"].keys():
-                    time_dict[operation][key][ss[2]]["time"]["QueryNode-Proxy"] = \
-                        (end - time_dict[operation][key][ss[2]]["time"]["Search-Receive-Result"]) / 1000000.0
-        elif int(ss[1].split("=")[-1]) not in [0, 1]:
-            time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = int(ss[4].split("=")[-1]) / 1000000.0
+        coll = ss[3]
+        if coll not in time_dict[operation].keys():
+            time_dict[operation][coll] = {}
+        msgID = ss[4]
+        if msgID not in time_dict[operation][ss[3]].keys():
+            time_dict[operation][coll][msgID] = {}
+        duration = "Duration"
+        if duration not in time_dict[operation][coll][msgID].keys():
+            time_dict[operation][coll][msgID][duration] = {}
+        step = ss[2].split("=")[-1]
+        if step == "SendMsgToMessageStorage":
+            if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
+                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {"start": float(ss[5].split("=")[-1])}
+        elif step == "QueryNode-Receive":
+            time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
+            time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] - \
+            time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"]
+        else:
+            time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1])
+        # if int(ss[1].split("=")[-1]) not in [0, 1]:
+        #     if ss[1] not in time_dict[operation].keys() and int(ss[1].split("=")[-1]) != 1:
+        #         time_dict[operation][ss[1]] = {}
+        #     if ss[2] not in time_dict[operation][ss[1]].keys():
+        #         time_dict[operation][ss[1]][ss[2]] = {}
+        #     if "time" not in time_dict[operation][ss[1]][ss[2]].keys():
+        #         time_dict[operation][ss[1]][ss[2]]["time"] = {}
+        #     if "MsgStream" not in time_dict[operation][ss[1]][ss[2]]["time"]:
+        #         time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"] = {}
+        # if ss[3].split("=")[-1] == "MsgStream-send":
+        #     time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"]["start"] = int(ss[4].split("=")[-1])
+        # elif ss[3].split("=")[-1] == "MsgStream-receive":
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         if operation == "Search" and "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
+        #             continue
+        #         if "start" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
+        #             end = int(ss[4].split("=")[-1])
+        #             time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"] = end
+        #             time_dict[operation][key][ss[2]]["time"]["MsgStream"]["cost"] = \
+        #                 (end - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["start"]) / 1000000.0
+        # elif ss[3].split("=")[-1] == "QueryNode-queue":
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
+        #             continue
+        #         if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
+        #             queue = int(ss[4].split("=")[-1])
+        #             time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
+        #                 (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
+        #             # print(time_dict[operation][key][ss[2]]["time"])
+        # elif ss[3].split("=")[-1] == "DataNode-Queue":
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
+        #             continue
+        #         if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
+        #             queue = int(ss[4].split("=")[-1])
+        #             time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
+        #                 (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
+        # elif ss[3].split("=")[-1] == "Proxy-Receive-Request":
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         time_dict[operation][key][ss[2]]["time"]["start"] = int(ss[4].split("=")[-1]) / 1000000.0
+        # elif ss[3].split("=")[-1] == "Insert-End":
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         if "start" in time_dict[operation][key][ss[2]]["time"].keys():
+        #             end = int(ss[4].split("=")[-1]) / 1000000.0
+        #             time_dict[operation][key][ss[2]]["time"]["end"] = end
+        #             time_dict[operation][key][ss[2]]["time"]["Insert-cost"] = \
+        #                 end - time_dict[operation][key][ss[2]]["time"]["start"]
+        # elif ss[3].split("=")[-1] == "Search-Receive-Result":
+        #     end = int(ss[4].split("=")[-1])
+        #     time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = end / 1000000.0
+        #     for key in time_dict[operation].keys():
+        #         if ss[2] not in time_dict[operation][key]:
+        #             continue
+        #         if "Search-Send-Result" in time_dict[operation][key][ss[2]]["time"].keys():
+        #             time_dict[operation][key][ss[2]]["time"]["QueryNode-Proxy"] = \
+        #                 (end - time_dict[operation][key][ss[2]]["time"]["Search-Receive-Result"]) / 1000000.0
+        # elif int(ss[1].split("=")[-1]) not in [0, 1]:
+        #     time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = int(ss[4].split("=")[-1]) / 1000000.0
 
 
 def parse_log_files(files, f2):
@@ -155,7 +188,7 @@ def parse_log_files(files, f2):
 
 
 def add_E2E_time(src, f2):
-    e2e_time = {"Insert": {"start": [], "end": [], "e2e": []}, "Search": {"start": [], "end": [], "e2e": []}}
+    e2e_time = {"Insert": {"start": [], "end": [], "e2e": []}, "search": {"start": [], "end": [], "e2e": []}}
 
     for line in f2:
         s = str(line.strip('\n'))
@@ -168,11 +201,11 @@ def add_E2E_time(src, f2):
         if "insert time cost" in s.split(":"):
             e2e_time["Insert"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
         if "search start time" in s.split(":"):
-            e2e_time["Search"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
         if "search end time" in s.split(":"):
-            e2e_time["Search"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
         if "search time cost" in s.split(":"):
-            e2e_time["Search"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
 
     i = 0
     j = 0
@@ -191,16 +224,16 @@ def add_E2E_time(src, f2):
                     src[operation][coll][row]["time"]["E2E"] = e2e_time["Insert"]["e2e"][i]
                     i += 1
 
-        if operation == "Search":
+        if operation == "search":
             for coll in src[operation].keys():
                 for row in src[operation][coll].keys():
                     # print(src[operation][coll][row])
                     # print(len(src[operation][coll]))
-                    src[operation][coll][row]["time"]["SDK-Proxy"] = \
-                        src[operation][coll][row]["time"]["start"] - e2e_time["Search"]["start"][j]
-                    src[operation][coll][row]["time"]["Proxy-SDK"] = \
-                        e2e_time["Search"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
-                    src[operation][coll][row]["time"]["E2E"] = e2e_time["Search"]["e2e"][j]
+                    # src[operation][coll][row]["time"]["SDK-Proxy"] = \
+                    #     src[operation][coll][row]["time"]["start"] - e2e_time["Search"]["start"][j]
+                    # src[operation][coll][row]["time"]["Proxy-SDK"] = \
+                    #     e2e_time["earch"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
+                    src[operation][coll][row]["Duration"]["E2E"] = e2e_time["search"]["e2e"][j]
                     j += 1
 
     with open("time_cost.json", 'w') as f:
@@ -220,12 +253,12 @@ def json_to_csv(src, f2):
                 if k == 1:
                     continue
                 index.append(row)
-                if operation == "Search" and k == 5:
+                if operation == "search" and k == 100:
                     index.append("avg")
                     index.append(numpy.nan)
                     k = 0
             for row in src[operation][col].keys():
-                for field in src[operation][col][row]["time"].keys():
+                for field in src[operation][col][row]["Duration"].keys():
                     if field in ["start", "end", "Proxy-Insert-End", "Search-Send-Result", "Search-Receive-Result",
                                  "QueryNode-Proxy", "Proxy-Send-Result"]:
                         continue
@@ -242,14 +275,14 @@ def json_to_csv(src, f2):
                     if k == 0:
                         k += 1
                         continue
-                    if field == "MsgStream":
-                        data[field].append(src[operation][col][row]["time"][field]["cost"])
-                        avg[field] += src[operation][col][row]["time"][field]["cost"]
+                    if field == "MessageStorage":
+                        data[field].append(src[operation][col][row]["Duration"][field]["cost"])
+                        avg[field] += src[operation][col][row]["Duration"][field]["cost"]
                     else:
-                        data[field].append(src[operation][col][row]["time"][field])
-                        avg[field] += src[operation][col][row]["time"][field]
+                        data[field].append(src[operation][col][row]["Duration"][field])
+                        avg[field] += src[operation][col][row]["Duration"][field]
                     k += 1
-                    if operation == "Search" and k == 5:
+                    if operation == "search" and k == 100:
                         data[field].append(avg[field] / (k-1))
                         data[field].append(numpy.nan)
                         avg[field] = 0
@@ -259,8 +292,9 @@ def json_to_csv(src, f2):
             if k != 0:
                 index.append("avg")
             # print("data", data)
-            # for i in data:
-            #     print("field, ", i, "length", len(data[i]))
+            for i in data:
+                print("field, ", i, "length", len(data[i]))
+            print("index", len(index))
             df = pandas.DataFrame(data=data, index=index)
             # print(df)
             df.to_csv(operation + col + '.csv', encoding='gbk')
@@ -276,14 +310,14 @@ def json_to_csv(src, f2):
                         j = 0
                         file_list.append(line)
                         continue
-                    if i % 6 == 0:
+                    if i % 101 == 0:
                         topK = int(j / (len(NQ)*len(Nprobe)))
                         nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
                         nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
-                    if i % 6 == 0:
+                    if i % 101 == 0:
                         j += 1
             with open(operation + '.csv', 'w') as f:
                 for line in file_list:
