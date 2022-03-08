@@ -3,7 +3,7 @@ import time
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
 from config import TopK, NQ, Nprobe, NumberOfTestRun, dim, collection_name, field_name
 
-# connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
+connections.add_connection(default={"host": "172.18.50.4", "port": "19530"})
 connections.connect("default")
 
 
@@ -49,11 +49,15 @@ if __name__ == "__main__":
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
                 start = time.time()
-                for _ in range(NumberOfTestRun):
+                # for _ in range(NumberOfTestRun):
+                i = 0
+                while True:
                     query_entities = generate_entities(dim, nq)
                     search(coll, query_entities, field_name, topK, nprobe)
+                    i += 1
+                    if time.time() - start >= 60:
+                        break
 
                 end = time.time()
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "tootal time = ",
-                      end - start, "avg time = ", (end-start)/NumberOfTestRun)
-
+                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times =", i, "total time = ",
+                      end - start, "avg time = ", (end - start) / i)
