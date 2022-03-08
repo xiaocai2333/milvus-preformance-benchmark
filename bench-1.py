@@ -111,6 +111,5 @@ if __name__ == "__main__":
                 end = time.time()
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "total time = ",
                       end - start, "avg time = ", (end-start)/NumberOfTestRun)
-                time.sleep(60)
 
     coll.drop()

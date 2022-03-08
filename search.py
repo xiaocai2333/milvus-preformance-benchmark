@@ -61,3 +61,4 @@ if __name__ == "__main__":
                 end = time.time()
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times =", i, "total time = ",
                       end - start, "avg time = ", (end - start) / i)
+                time.sleep(60)
