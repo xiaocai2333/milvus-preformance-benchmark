@@ -90,11 +90,20 @@ def parse_log_file(logs, time_dict):
         step = ss[2].split("=")[-1]
         if step == "SendMsgToMessageStorage":
             if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
-                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {"start": float(ss[5].split("=")[-1])}
+                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
+            time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] = float(ss[5].split("=")[-1])
+            if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
+                    (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
         elif step == "QueryNode-Receive":
+            if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
+                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
             time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
-            time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                                                                                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
+            if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
+                    (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
         else:
             time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1])
         # if int(ss[1].split("=")[-1]) not in [0, 1]:
@@ -183,7 +192,8 @@ def parse_log_files(files, f2):
             f.write(log+"\n")
     parse_log_file(all_logs, time_dict)
 
-    json_to_csv(time_dict, f2)
+    # json_to_csv(time_dict, f2)
+    json_to_csv2(time_dict)
 
 
 def add_E2E_time(src, f2):
@@ -321,6 +331,31 @@ def json_to_csv(src, f2):
             with open(operation + '.csv', 'w') as f:
                 for line in file_list:
                     f.write(line)
+
+
+def json_to_csv2(src):
+    for operation in src.keys():
+        for col in src[operation].keys():
+            field_name = []
+            index = []
+            for row in src[operation][col].keys():
+                index.append(row)
+            for row in src[operation][col].keys():
+                for field in src[operation][col][row]["Duration"].keys():
+                    field_name.append(field)
+                break
+            data = {}
+            for field in field_name:
+                data[field] = []
+                for row in src[operation][col].keys():
+                    if field == "MessageStorage":
+                        data[field].append(src[operation][col][row]["Duration"][field]["cost"])
+                    else:
+                        data[field].append(src[operation][col][row]["Duration"][field])
+
+            df = pandas.DataFrame(data=data, index=index)
+            # print(df)
+            df.to_csv(operation + col + '.csv', encoding='gbk')
 
 
 if __name__ == "__main__":
