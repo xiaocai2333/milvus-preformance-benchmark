@@ -6,5 +6,7 @@ time_cost.json
 *.log
 *.txt
 
+
 # idea
 .idea/
+__pycache__/
