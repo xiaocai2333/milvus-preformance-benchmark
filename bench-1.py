@@ -109,7 +109,7 @@ if __name__ == "__main__":
                     search(coll, query_entities, field_name, topK, nprobe)
 
                 end = time.time()
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = 100", "total time = ",
+                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = ", NumberOfTestRun, "total time = ",
                       end - start, "avg time = ", (end-start)/NumberOfTestRun)
 
     coll.drop()
