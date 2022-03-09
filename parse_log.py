@@ -192,8 +192,8 @@ def parse_log_files(files, f2):
             f.write(log+"\n")
     parse_log_file(all_logs, time_dict)
 
-    # json_to_csv(time_dict, f2)
-    json_to_csv2(time_dict)
+    json_to_csv(time_dict, f2)
+    # json_to_csv2(time_dict)
 
 
 def add_E2E_time(src, f2):
