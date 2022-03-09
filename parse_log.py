@@ -236,8 +236,8 @@ def add_E2E_time(src, f2):
         if operation == "search":
             for coll in src[operation].keys():
                 for row in src[operation][coll].keys():
-                    # print(src[operation][coll][row])
-                    # print(len(src[operation][coll]))
+                    # print(len(src[operation][coll].keys()))
+                    # print(len(e2e_time["search"]["e2e"]))
                     # src[operation][coll][row]["time"]["SDK-Proxy"] = \
                     #     src[operation][coll][row]["time"]["start"] - e2e_time["Search"]["start"][j]
                     # src[operation][coll][row]["time"]["Proxy-SDK"] = \
