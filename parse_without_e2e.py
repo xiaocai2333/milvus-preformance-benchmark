@@ -131,14 +131,14 @@ def json_to_csv(src):
                         j = 0
                         file_list.append(line)
                         continue
-                    if i % 1 == 0:
+                    if i % 2 == 0:
                         topK = int(j / (len(NQ)*len(Nprobe)))
                         nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
                         nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
-                    if i % 1 == 0:
+                    if i % 2 == 0:
                         j += 1
             with open(operation + '.csv', 'w') as f:
                 for line in file_list:
