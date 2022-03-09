@@ -113,9 +113,9 @@ def json_to_csv(src):
             if k != 0:
                 index.append("avg")
             # print("data", data)
-            for i in data:
-                print("field, ", i, "length", len(data[i]))
-            print("index", len(index))
+            # for i in data:
+            #     print("field, ", i, "length", len(data[i]))
+            # print("index", len(index))
             df = pandas.DataFrame(data=data, index=index)
             # print(df)
             df.to_csv(operation + col + '.csv', encoding='gbk')

@@ -49,16 +49,21 @@ if __name__ == "__main__":
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
                 start = time.time()
-                # for _ in range(NumberOfTestRun):
-                i = 0
-                while True:
-                    query_entities = generate_entities(dim, nq)
+                query_entities = generate_entities(dim, nq)
+                for _ in range(NumberOfTestRun):
                     search(coll, query_entities, field_name, topK, nprobe)
-                    i += 1
-                    if time.time() - start >= 60:
-                        break
 
                 end = time.time()
-                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times =", i, "total time = ",
-                      end - start, "avg time = ", (end - start) / i)
-                time.sleep(60)
+                print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = ", NumberOfTestRun,
+                      "total time = ", end - start, "avg time = ", (end - start) / NumberOfTestRun)
+                # i = 0
+                # while True:
+                #     query_entities = generate_entities(dim, nq)
+                #     search(coll, query_entities, field_name, topK, nprobe)
+                #     i += 1
+                #     if time.time() - start >= 60:
+                #         break
+                # end = time.time()
+                # print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times =", i, "total time = ",
+                #       end - start, "avg time = ", (end - start) / i)
+                # time.sleep(60)
