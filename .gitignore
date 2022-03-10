@@ -5,6 +5,7 @@ time_cost.json
 *.csv
 *.log
 *.txt
+*.hdf5
 
 
 # idea

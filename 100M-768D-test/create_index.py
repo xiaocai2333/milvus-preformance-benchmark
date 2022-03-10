@@ -39,12 +39,6 @@ def create_index(collection, field_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="your script description")  # description参数可以用于插入描述脚本用途的信息，可以为空
-    parser.add_argument('--log', '-l', nargs='*', type=argparse.FileType('r'), help='verbose mode')
-    parser.add_argument('--sdk', '-s', nargs='*', type=argparse.FileType('r'), help='verbose mode')
-
-    args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
-    parse_log_files(args.log, args.sdk[0])
     coll = create_collection(collection_name, field_name, dim)
     coll.drop_index()
     create_index(coll, field_name)

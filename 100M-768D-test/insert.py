@@ -76,10 +76,12 @@ def insert_data_from_file(coll, nb, vectors_per_file, file):
     #     data = np.load(fname)
     #     vectors = data.tolist()
     #     insert(coll, vectors)
+    print(str(file))
+    data = []
+    with h5py.File(file, 'r') as f:
+        data = list(f['train'])
     for j in range(nb // vectors_per_file):
-        with h5py.File(file, 'r') as f:
-            data = list(f['train'])
-            insert(coll, data)
+        insert(coll, data)
 
 
 @time_costing
@@ -90,7 +92,7 @@ def create_index(collection, field_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="your script description")  # description参数可以用于插入描述脚本用途的信息，可以为空
-    parser.add_argument('--file', '-f', nargs='*', type=argparse.FileType('r'), help='verbose mode')
+    parser.add_argument('--file', '-f', nargs='*', type=str, help='verbose mode')
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
     coll = create_collection(collection_name, field_name, dim)
