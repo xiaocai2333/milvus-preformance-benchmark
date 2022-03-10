@@ -9,13 +9,13 @@ NQ = [1, 10, 100, 200, 500, 1000, 1200]
 Nprobe = [16]
 
 
-NumberOfTestRun = 100
+NumberOfTestRun = 5
 
 dim = 768
 nb = 5000000
 batch = 50000
 thread_nums = 10
-vectors_per_file = 100000
+vectors_per_file = 60000
 
 collection_name = "bench_1"
 field_name = "field"

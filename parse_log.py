@@ -95,7 +95,7 @@ def parse_log_file(logs, time_dict):
             if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
                     (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0
         elif step == "QueryNode-Receive":
             if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
@@ -103,7 +103,7 @@ def parse_log_file(logs, time_dict):
             if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
                     (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000000
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0
         else:
             time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1])
         # if int(ss[1].split("=")[-1]) not in [0, 1]:
@@ -204,17 +204,17 @@ def add_E2E_time(src, f2):
         if "generate_entities time cost" in s.split(":"):
             continue
         if "insert start time" in s.split(":"):
-            e2e_time["Insert"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["Insert"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
         if "insert end time" in s.split(":"):
-            e2e_time["Insert"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["Insert"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
         if "insert time cost" in s.split(":"):
-            e2e_time["Insert"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["Insert"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
         if "search start time" in s.split(":"):
-            e2e_time["search"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
         if "search end time" in s.split(":"):
-            e2e_time["search"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
         if "search time cost" in s.split(":"):
-            e2e_time["search"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0)
+            e2e_time["search"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
 
     i = 0
     j = 0
@@ -259,12 +259,10 @@ def json_to_csv(src, f2):
             k = 0
             for row in src[operation][col].keys():
                 k += 1
-                if k == 1:
-                    continue
                 index.append(row)
                 if operation == "search" and k == NumberOfTestRun:
                     index.append("avg")
-                    index.append(numpy.nan)
+                    # index.append(numpy.nan)
                     k = 0
             for row in src[operation][col].keys():
                 for field in src[operation][col][row]["Duration"].keys():
@@ -281,9 +279,6 @@ def json_to_csv(src, f2):
                 avg[field] = 0
                 k = 0
                 for row in src[operation][col].keys():
-                    if k == 0:
-                        k += 1
-                        continue
                     if field == "MessageStorage":
                         data[field].append(src[operation][col][row]["Duration"][field]["cost"])
                         avg[field] += src[operation][col][row]["Duration"][field]["cost"]
@@ -293,7 +288,7 @@ def json_to_csv(src, f2):
                     k += 1
                     if operation == "search" and k == NumberOfTestRun:
                         data[field].append(avg[field] / (k-1))
-                        data[field].append(numpy.nan)
+                        # data[field].append(numpy.nan)
                         avg[field] = 0
                         k = 0
                 if k != 0:
