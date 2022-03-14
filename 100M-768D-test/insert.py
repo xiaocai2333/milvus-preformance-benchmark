@@ -9,7 +9,7 @@ from pymilvus import connections, Collection, CollectionSchema, FieldSchema, Dat
 from config import dim, nb, batch, thread_nums, vectors_per_file, collection_name, field_name
 
 
-# connections.add_connection(default={"host": "10.96.77.48", "port": "19530"})
+connections.add_connection(default={"host": "172.18.50.4", "port": "19530"})
 connections.connect("default")
 
 fname_h5 = '/Users/cai.zhang/work/data/fashion-mnist-784-euclidean.hdf5'
@@ -68,7 +68,7 @@ def generate_entities(dim, nb) -> list:
     return vectors
 
 
-def insert_data_from_file(coll, nb, vectors_per_file, file):
+def insert_data_from_file(coll, nb, vectors_per_file, batch, files):
     # logger.info("Load npy file: %s end" % file_name)
     # for j in range(nb // vectors_per_file):
     #     s = "%05d" % j
@@ -76,12 +76,36 @@ def insert_data_from_file(coll, nb, vectors_per_file, file):
     #     data = np.load(fname)
     #     vectors = data.tolist()
     #     insert(coll, vectors)
-    print(str(file))
-    data = []
-    with h5py.File(file, 'r') as f:
-        data = list(f['train'])
-    for j in range(nb // vectors_per_file):
-        insert(coll, data)
+    # print(str(file))
+    # data = []
+    # with h5py.File(file, 'r') as f:
+    #     data = list(f['train'])
+    # for j in range(nb // vectors_per_file):
+    #     insert(coll, data)
+    insert_num = 0
+    flag = True
+    while flag:
+        for file in files:
+            print(file)
+            data = np.fromfile(file, dtype=np.float32, count=vectors_per_file*768)
+            data.shape = -1, 768
+            print(len(data))
+            # return
+            for i in range(vectors_per_file//batch):
+                entities = data[i*batch:(i+1)*batch, :].tolist()
+                if len(entities) < batch:
+                    continue
+                insert(coll, entities)
+                insert_num += 1
+                print("insert times", insert_num)
+                if insert_num*batch >= nb:
+                    flag = False
+                    break
+    # data.shape = -1, 768
+    # num_entities = 10000
+
+    # for j in range(nb // vectors_per_file):
+    #     insert(coll, data.tolist())
 
 
 @time_costing
@@ -92,11 +116,11 @@ def create_index(collection, field_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="your script description")  # description参数可以用于插入描述脚本用途的信息，可以为空
-    parser.add_argument('--file', '-f', nargs='*', type=str, help='verbose mode')
+    parser.add_argument('--files', '-f', nargs='*', type=str, help='verbose mode')
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
     coll = create_collection(collection_name, field_name, dim)
     create_index(coll, field_name)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_data_from_file(coll, nb, vectors_per_file, args.file[0])
+    insert_data_from_file(coll, nb, vectors_per_file, batch, args.files)
     create_index(coll, field_name)

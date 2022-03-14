@@ -94,18 +94,18 @@ def parse_log_file(logs, time_dict):
             time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] = float(ss[5].split("=")[-1])
             if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
-                    (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0
+                    round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
         elif step == "QueryNode-Receive":
             if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
             time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
             if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
                 time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
-                    (time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0
+                    round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
         else:
-            time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1])
+            time_dict[operation][coll][msgID][duration][step] = round(float(ss[5].split("=")[-1])/1000.0, 4)
         # if int(ss[1].split("=")[-1]) not in [0, 1]:
         #     if ss[1] not in time_dict[operation].keys() and int(ss[1].split("=")[-1]) != 1:
         #         time_dict[operation][ss[1]] = {}
@@ -204,17 +204,17 @@ def add_E2E_time(src, f2):
         if "generate_entities time cost" in s.split(":"):
             continue
         if "insert start time" in s.split(":"):
-            e2e_time["Insert"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["Insert"]["start"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
         if "insert end time" in s.split(":"):
-            e2e_time["Insert"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["Insert"]["end"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
         if "insert time cost" in s.split(":"):
-            e2e_time["Insert"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["Insert"]["e2e"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
         if "search start time" in s.split(":"):
-            e2e_time["search"]["start"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["search"]["start"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
         if "search end time" in s.split(":"):
-            e2e_time["search"]["end"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["search"]["end"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
         if "search time cost" in s.split(":"):
-            e2e_time["search"]["e2e"].append(float(s.replace(" ", "").split(":")[-1]) * 1000.0 * 1000.0)
+            e2e_time["search"]["e2e"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
 
     i = 0
     j = 0
@@ -287,7 +287,7 @@ def json_to_csv(src, f2):
                         avg[field] += src[operation][col][row]["Duration"][field]
                     k += 1
                     if operation == "search" and k == NumberOfTestRun:
-                        data[field].append(avg[field] / (k-1))
+                        data[field].append(round(avg[field] / k, 4))
                         # data[field].append(numpy.nan)
                         avg[field] = 0
                         k = 0

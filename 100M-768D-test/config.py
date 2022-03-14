@@ -11,11 +11,11 @@ Nprobe = [16]
 
 NumberOfTestRun = 5
 
-dim = 784
-nb = 1000000
+dim = 768
+nb = 100000000
 batch = 50000
 thread_nums = 10
-vectors_per_file = 60000
+vectors_per_file = 2500000
 
-collection_name = "bench_2"
+collection_name = "bench_768"
 field_name = "field"
