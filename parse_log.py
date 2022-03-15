@@ -256,15 +256,23 @@ def json_to_csv(src, f2):
             file_list = []
             i = 0
             j = 0
-
+            topK, nq, nprobe = 0, 0, 0
             # TopK first
             with open(operation + col + '.csv', 'r') as f:
                 for line in f:
                     if i % (NumberOfTestRun+1) == 0:
-                        topK = int(j / (len(NQ)*len(Nprobe)))
-                        nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
-                        nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
-                        # print(topK, nq, nprobe)
+                        nprobe += 1
+                        if nprobe == len(Nprobe):
+                            nq += 1
+                            nprobe = 0
+                        if nq == len(NQ):
+                            topK += 1
+                            nq = 0
+
+                        # topK = int(j / (len(NQ)*len(Nprobe)))
+                        # nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
+                        # nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
+                        print(topK, nq, nprobe)
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
