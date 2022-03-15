@@ -11,6 +11,8 @@ Nprobe = [16]
 
 NumberOfTestRun = 5
 
+QueryNodeNum = 1
+
 dim = 768
 nb = 5000000
 batch = 50000

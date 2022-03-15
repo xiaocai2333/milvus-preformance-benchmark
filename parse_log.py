@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas
 import numpy
-from config import TopK, NQ, Nprobe, NumberOfTestRun
+from config import TopK, NQ, Nprobe, NumberOfTestRun, QueryNodeNum
 
 
 # After parsing, it is in json format, the example is as follows:
@@ -84,28 +84,44 @@ def parse_log_file(logs, time_dict):
         msgID = ss[4]
         if msgID not in time_dict[operation][ss[3]].keys():
             time_dict[operation][coll][msgID] = {}
+        role = ss[2]
         duration = "Duration"
         if duration not in time_dict[operation][coll][msgID].keys():
             time_dict[operation][coll][msgID][duration] = {}
         step = ss[2].split("=")[-1]
-        if step == "SendMsgToMessageStorage":
-            if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
-                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
-            time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] = float(ss[5].split("=")[-1])
-            if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
-                time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
-                    round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
-        elif step == "QueryNode-Receive":
-            if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
-                time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
-            time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
-            if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
-                time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
-                    round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
-        else:
-            time_dict[operation][coll][msgID][duration][step] = round(float(ss[5].split("=")[-1])/1000.0, 4)
+        if role == "proxy":
+            if step == "SendMsgToMessageStorage":
+                if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
+                    time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
+                time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"] = float(ss[5].split("=")[-1])
+                # if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                #     time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
+                #         round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                #          time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
+            else:
+                time_dict[operation][coll][msgID][duration][step] = round(float(ss[5].split("=")[-1])/1000.0, 4)
+        elif role == "querynode":
+            if step == "QueryNode-Receive":
+                if "MessageStorage" not in time_dict[operation][coll][msgID][duration]:
+                    time_dict[operation][coll][msgID][duration]["MessageStorage"] = {}
+                if "end" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                    if time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] > float(ss[5].split("=")[-1]):
+                        time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
+                else:
+                    time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
+
+                # if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                #     time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
+                #         round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                #          time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
+            else:
+                if step not in time_dict[operation][coll][msgID][duration]:
+                    time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1]) / 1000.0
+                # multiple QueryNodes, get the avg of step.
+                else:
+                    time_dict[operation][coll][msgID][duration][step] = \
+                        (time_dict[operation][coll][msgID][duration][step] * QueryNodeNum
+                         + float(ss[5].split("=")[-1]) / 1000.0) / QueryNodeNum
 
 
 def parse_log_files(files, f2):
