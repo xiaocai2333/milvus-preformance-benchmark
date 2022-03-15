@@ -37,6 +37,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 @time_costing
 def insert(collection, entities):
     mr = collection.insert(entities)
+    gc.collect()
     print(mr)
 
 
@@ -44,7 +45,6 @@ def gen_data_and_insert(collection, nb, batch, dim):
     for i in range(int(nb/batch)):
         entities = generate_entities(dim, nb)
         insert(collection, entities)
-        gc.collect()
 
 
 def insert_parallel(collection, nb, dim, batch, thread_num=1):
