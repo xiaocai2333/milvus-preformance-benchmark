@@ -110,7 +110,7 @@ def insert_data_from_file(coll, nb, batch, files):
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
 
 
@@ -119,9 +119,9 @@ if __name__ == "__main__":
     parser.add_argument('--files', '-f', nargs='*', type=str, help='verbose mode')
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
-    coll = create_collection(collection_name, field_name, dim, auto_id=False)
+    coll = create_collection(collection_name, field_name, dim, auto_id=True)
     create_index(coll, field_name)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_parallel(coll, nb, dim, batch, thread_nums)
+    insert_parallel(coll, nb, dim, batch)
     # insert_data_from_file(coll, nb, vectors_per_file, args.file[0])
     create_index(coll, field_name)
