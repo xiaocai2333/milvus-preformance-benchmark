@@ -270,7 +270,7 @@ def json_to_csv(src, f2):
                     i += 1
                     if i % (NumberOfTestRun+1) == 0:
                         j += 1
-            with open(operation + '.csv', 'w') as f:
+            with open(operation + '_topk.csv', 'w') as f:
                 for line in file_list:
                     f.write(line)
 
@@ -292,7 +292,7 @@ def json_to_csv(src, f2):
                     i += 1
                     if i % (NumberOfTestRun+1) == 0:
                         j += 1
-            with open(operation + '.csv', 'w') as f:
+            with open(operation + '_nq.csv', 'w') as f:
                 for line in file_list:
                     f.write(line)
 
