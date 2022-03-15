@@ -151,7 +151,7 @@ def add_E2E_time(src, f2):
     i = 0
     j = 0
     # print("Insert times", len(e2e_time["Insert"]["start"]))
-    print("Search times", len(e2e_time["search"]["e2e"]))
+    # print("Search times", len(e2e_time["search"]["e2e"]))
     # print("Search times", len(e2e_time["Search"]["start"]))
     # print("Search times", len(e2e_time["Search"]["end"]))
     for operation in src.keys():
@@ -167,7 +167,6 @@ def add_E2E_time(src, f2):
         pop_keys = []
         if operation == "search":
             for coll in src[operation].keys():
-                print(len(src[operation][coll].keys()))
                 for row in src[operation][coll].keys():
                     # print(len(src[operation][coll].keys()))
                     # print(len(e2e_time["search"]["e2e"]))
@@ -177,7 +176,7 @@ def add_E2E_time(src, f2):
                     #     e2e_time["earch"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
                     src[operation][coll][row]["Duration"]["E2E"] = e2e_time["search"]["e2e"][j]
                     j += 1
-                    if j < NumberOfTestRun:
+                    if j <= NumberOfTestRun:
                         pop_keys.append(row)
                 for key in pop_keys:
                     src[operation][coll].pop(key)
@@ -254,6 +253,7 @@ def json_to_csv(src, f2):
                         topK = int(j / (len(NQ)*len(Nprobe)))
                         nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
                         nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
+                        #print(topK,nq,nprobe)
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
