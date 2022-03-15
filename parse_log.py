@@ -84,7 +84,7 @@ def parse_log_file(logs, time_dict):
         msgID = ss[4]
         if msgID not in time_dict[operation][ss[3]].keys():
             time_dict[operation][coll][msgID] = {}
-        role = ss[2]
+        role = ss[1].split("=")[-1]
         duration = "Duration"
         if duration not in time_dict[operation][coll][msgID].keys():
             time_dict[operation][coll][msgID][duration] = {}
@@ -109,11 +109,11 @@ def parse_log_file(logs, time_dict):
                         time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
                 else:
                     time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] = float(ss[5].split("=")[-1])
+                if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
+                    time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
+                        round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
+                         time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
 
-                # if "start" in time_dict[operation][coll][msgID][duration]["MessageStorage"]:
-                #     time_dict[operation][coll][msgID][duration]["MessageStorage"]["cost"] = \
-                #         round((time_dict[operation][coll][msgID][duration]["MessageStorage"]["end"] -
-                #          time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
             else:
                 if step not in time_dict[operation][coll][msgID][duration]:
                     time_dict[operation][coll][msgID][duration][step] = float(ss[5].split("=")[-1]) / 1000.0
