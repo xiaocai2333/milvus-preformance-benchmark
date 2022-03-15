@@ -177,7 +177,7 @@ def parse_log_file(logs, time_dict):
         #     time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = int(ss[4].split("=")[-1]) / 1000000.0
 
 
-def parse_log_files(files, f2):
+def parse_log_files(files):
     all_logs = []
     time_dict = {}
     for file in files:
@@ -193,143 +193,10 @@ def parse_log_files(files, f2):
             f.write(log+"\n")
     parse_log_file(all_logs, time_dict)
 
-    json_to_csv(time_dict, f2)
-    # json_to_csv2(time_dict)
+    json_to_csv(time_dict)
 
 
-def add_E2E_time(src, f2):
-    e2e_time = {"Insert": {"start": [], "end": [], "e2e": []}, "search": {"start": [], "end": [], "e2e": []}}
-
-    for line in f2:
-        s = str(line.strip('\n'))
-        if "generate_entities time cost" in s.split(":"):
-            continue
-        if "insert start time" in s.split(":"):
-            e2e_time["Insert"]["start"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-        if "insert end time" in s.split(":"):
-            e2e_time["Insert"]["end"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-        if "insert time cost" in s.split(":"):
-            e2e_time["Insert"]["e2e"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-        if "search start time" in s.split(":"):
-            e2e_time["search"]["start"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-        if "search end time" in s.split(":"):
-            e2e_time["search"]["end"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-        if "search time cost" in s.split(":"):
-            e2e_time["search"]["e2e"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
-
-    i = 0
-    j = 0
-    # print("Insert times", len(e2e_time["Insert"]["start"]))
-    # print("Search times", len(e2e_time["Search"]["e2e"]))
-    # print("Search times", len(e2e_time["Search"]["start"]))
-    # print("Search times", len(e2e_time["Search"]["end"]))
-    for operation in src.keys():
-        if operation == "Insert":
-            for coll in src[operation].keys():
-                for row in src[operation][coll].keys():
-                    src[operation][coll][row]["time"]["SDK-Proxy"] = \
-                        src[operation][coll][row]["time"]["start"] - e2e_time["Insert"]["start"][i]
-                    src[operation][coll][row]["time"]["Proxy-SDK"] = \
-                        e2e_time["Insert"]["end"][i] - src[operation][coll][row]["time"]["Proxy-Insert-End"]
-                    src[operation][coll][row]["time"]["E2E"] = e2e_time["Insert"]["e2e"][i]
-                    i += 1
-
-        if operation == "search":
-            for coll in src[operation].keys():
-                for row in src[operation][coll].keys():
-                    # print(len(src[operation][coll].keys()))
-                    # print(len(e2e_time["search"]["e2e"]))
-                    # src[operation][coll][row]["time"]["SDK-Proxy"] = \
-                    #     src[operation][coll][row]["time"]["start"] - e2e_time["Search"]["start"][j]
-                    # src[operation][coll][row]["time"]["Proxy-SDK"] = \
-                    #     e2e_time["earch"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
-                    src[operation][coll][row]["Duration"]["E2E"] = e2e_time["search"]["e2e"][j]
-                    j += 1
-
-    with open("time_cost.json", 'w') as f:
-        f.write(json.dumps(src, indent=4))
-    return src
-
-
-def json_to_csv(src, f2):
-    src = add_E2E_time(src, f2)
-    for operation in src.keys():
-        for col in src[operation].keys():
-            field_name = []
-            index = []
-            k = 0
-            for row in src[operation][col].keys():
-                k += 1
-                index.append(row)
-                if operation == "search" and k == NumberOfTestRun:
-                    index.append("avg")
-                    # index.append(numpy.nan)
-                    k = 0
-            for row in src[operation][col].keys():
-                for field in src[operation][col][row]["Duration"].keys():
-                    if field in ["start", "end", "Proxy-Insert-End", "Search-Send-Result", "Search-Receive-Result",
-                                 "QueryNode-Proxy", "Proxy-Send-Result"]:
-                        continue
-                    field_name.append(field)
-                break
-            data = {}
-            avg = {}
-            k = 0
-            for field in field_name:
-                data[field] = []
-                avg[field] = 0
-                k = 0
-                for row in src[operation][col].keys():
-                    if field == "MessageStorage":
-                        data[field].append(src[operation][col][row]["Duration"][field]["cost"])
-                        avg[field] += src[operation][col][row]["Duration"][field]["cost"]
-                    else:
-                        data[field].append(src[operation][col][row]["Duration"][field])
-                        avg[field] += src[operation][col][row]["Duration"][field]
-                    k += 1
-                    if operation == "search" and k == NumberOfTestRun:
-                        data[field].append(round(avg[field] / k, 4))
-                        # data[field].append(numpy.nan)
-                        avg[field] = 0
-                        k = 0
-                if k != 0:
-                    data[field].append(avg[field] / k)
-            if k != 0:
-                index.append("avg")
-            # print("data", data)
-            # for i in data:
-            #     print("field, ", i, "length", len(data[i]))
-            # print("index", len(index))
-            df = pandas.DataFrame(data=data, index=index)
-            # print(df)
-            df.to_csv(operation + col + '.csv', encoding='gbk')
-            file_list = []
-            l = 0
-            i = 0
-            j = 0
-            with open(operation + col + '.csv', 'r') as f:
-                for line in f:
-                    l += 1
-                    if l == 1:
-                        i = 0
-                        j = 0
-                        file_list.append(line)
-                        continue
-                    if i % (NumberOfTestRun+1) == 0:
-                        topK = int(j / (len(NQ)*len(Nprobe)))
-                        nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
-                        nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
-                        file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
-                    file_list.append(line)
-                    i += 1
-                    if i % (NumberOfTestRun+1) == 0:
-                        j += 1
-            with open(operation + '.csv', 'w') as f:
-                for line in file_list:
-                    f.write(line)
-
-
-def json_to_csv2(src):
+def json_to_csv(src):
     for operation in src.keys():
         for col in src[operation].keys():
             field_name = []
@@ -357,7 +224,6 @@ def json_to_csv2(src):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="your script description")  # description参数可以用于插入描述脚本用途的信息，可以为空
     parser.add_argument('--log', '-l', nargs='*', type=argparse.FileType('r'), help='verbose mode')
-    parser.add_argument('--sdk', '-s', nargs='*', type=argparse.FileType('r'), help='verbose mode')
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
-    parse_log_files(args.log, args.sdk[0])
+    parse_log_files(args.log)

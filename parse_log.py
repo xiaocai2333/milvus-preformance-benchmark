@@ -106,74 +106,6 @@ def parse_log_file(logs, time_dict):
                      time_dict[operation][coll][msgID][duration]["MessageStorage"]["start"])/1000.0/1000.0, 4)
         else:
             time_dict[operation][coll][msgID][duration][step] = round(float(ss[5].split("=")[-1])/1000.0, 4)
-        # if int(ss[1].split("=")[-1]) not in [0, 1]:
-        #     if ss[1] not in time_dict[operation].keys() and int(ss[1].split("=")[-1]) != 1:
-        #         time_dict[operation][ss[1]] = {}
-        #     if ss[2] not in time_dict[operation][ss[1]].keys():
-        #         time_dict[operation][ss[1]][ss[2]] = {}
-        #     if "time" not in time_dict[operation][ss[1]][ss[2]].keys():
-        #         time_dict[operation][ss[1]][ss[2]]["time"] = {}
-        #     if "MsgStream" not in time_dict[operation][ss[1]][ss[2]]["time"]:
-        #         time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"] = {}
-        # if ss[3].split("=")[-1] == "MsgStream-send":
-        #     time_dict[operation][ss[1]][ss[2]]["time"]["MsgStream"]["start"] = int(ss[4].split("=")[-1])
-        # elif ss[3].split("=")[-1] == "MsgStream-receive":
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         if operation == "Search" and "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-        #             continue
-        #         if "start" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-        #             end = int(ss[4].split("=")[-1])
-        #             time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"] = end
-        #             time_dict[operation][key][ss[2]]["time"]["MsgStream"]["cost"] = \
-        #                 (end - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["start"]) / 1000000.0
-        # elif ss[3].split("=")[-1] == "QueryNode-queue":
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
-        #             continue
-        #         if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-        #             queue = int(ss[4].split("=")[-1])
-        #             time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
-        #                 (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
-        #             # print(time_dict[operation][key][ss[2]]["time"])
-        # elif ss[3].split("=")[-1] == "DataNode-Queue":
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         if ss[3].split("=")[-1] in time_dict[operation][key][ss[2]]["time"].keys():
-        #             continue
-        #         if "end" in time_dict[operation][key][ss[2]]["time"]["MsgStream"].keys():
-        #             queue = int(ss[4].split("=")[-1])
-        #             time_dict[operation][key][ss[2]]["time"][ss[3].split("=")[-1]] = \
-        #                 (queue - time_dict[operation][key][ss[2]]["time"]["MsgStream"]["end"]) / 1000000.0
-        # elif ss[3].split("=")[-1] == "Proxy-Receive-Request":
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         time_dict[operation][key][ss[2]]["time"]["start"] = int(ss[4].split("=")[-1]) / 1000000.0
-        # elif ss[3].split("=")[-1] == "Insert-End":
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         if "start" in time_dict[operation][key][ss[2]]["time"].keys():
-        #             end = int(ss[4].split("=")[-1]) / 1000000.0
-        #             time_dict[operation][key][ss[2]]["time"]["end"] = end
-        #             time_dict[operation][key][ss[2]]["time"]["Insert-cost"] = \
-        #                 end - time_dict[operation][key][ss[2]]["time"]["start"]
-        # elif ss[3].split("=")[-1] == "Search-Receive-Result":
-        #     end = int(ss[4].split("=")[-1])
-        #     time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = end / 1000000.0
-        #     for key in time_dict[operation].keys():
-        #         if ss[2] not in time_dict[operation][key]:
-        #             continue
-        #         if "Search-Send-Result" in time_dict[operation][key][ss[2]]["time"].keys():
-        #             time_dict[operation][key][ss[2]]["time"]["QueryNode-Proxy"] = \
-        #                 (end - time_dict[operation][key][ss[2]]["time"]["Search-Receive-Result"]) / 1000000.0
-        # elif int(ss[1].split("=")[-1]) not in [0, 1]:
-        #     time_dict[operation][ss[1]][ss[2]]["time"][ss[3].split("=")[-1]] = int(ss[4].split("=")[-1]) / 1000000.0
 
 
 def parse_log_files(files, f2):
@@ -219,7 +151,7 @@ def add_E2E_time(src, f2):
     i = 0
     j = 0
     # print("Insert times", len(e2e_time["Insert"]["start"]))
-    # print("Search times", len(e2e_time["Search"]["e2e"]))
+    print("Search times", len(e2e_time["search"]["e2e"]))
     # print("Search times", len(e2e_time["Search"]["start"]))
     # print("Search times", len(e2e_time["Search"]["end"]))
     for operation in src.keys():
@@ -235,6 +167,7 @@ def add_E2E_time(src, f2):
 
         if operation == "search":
             for coll in src[operation].keys():
+                print(len(src[operation][coll].keys()))
                 for row in src[operation][coll].keys():
                     # print(len(src[operation][coll].keys()))
                     # print(len(e2e_time["search"]["e2e"]))
@@ -244,6 +177,8 @@ def add_E2E_time(src, f2):
                     #     e2e_time["earch"]["end"][j] - src[operation][coll][row]["time"]["Proxy-Send-Result"]
                     src[operation][coll][row]["Duration"]["E2E"] = e2e_time["search"]["e2e"][j]
                     j += 1
+                    if j < NumberOfTestRun:
+                        src[operation][coll].pop(row)
 
     with open("time_cost.json", 'w') as f:
         f.write(json.dumps(src, indent=4))
