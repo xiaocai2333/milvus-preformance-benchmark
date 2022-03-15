@@ -122,5 +122,6 @@ if __name__ == "__main__":
     coll = create_collection(collection_name, field_name, dim, auto_id=False)
     create_index(coll, field_name)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_data_from_file(coll, nb, batch, args.files)
+    insert_parallel(coll, nb, dim, batch, thread_nums)
+    # insert_data_from_file(coll, nb, vectors_per_file, args.file[0])
     create_index(coll, field_name)

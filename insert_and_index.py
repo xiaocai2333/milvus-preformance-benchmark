@@ -76,7 +76,7 @@ def insert_data_from_file(coll, nb, dim,  vectors_per_file, batch_size):
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
 
 

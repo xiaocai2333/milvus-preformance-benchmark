@@ -42,6 +42,7 @@ def generate_entities(dim, nb) -> list:
 if __name__ == "__main__":
     coll = create_collection(collection_name, field_name, dim)
 
+    coll.release()
     coll.load()
 
     for topK in TopK:

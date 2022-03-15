@@ -34,7 +34,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
 @time_costing
 def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 1024}, "metric_type": "L2"}
+    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
     collection.create_index(field_name, default_index)
 
 
