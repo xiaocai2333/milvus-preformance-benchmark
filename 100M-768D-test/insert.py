@@ -6,13 +6,11 @@ import numpy as np
 import h5py
 import argparse
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
-from config import dim, nb, batch, thread_nums, vectors_per_file, collection_name, field_name
+from config import dim, nb, batch, collection_name, field_name
 
 
 connections.add_connection(default={"host": "172.18.50.4", "port": "19530"})
 connections.connect("default")
-
-fname_h5 = '/Users/cai.zhang/work/data/fashion-mnist-784-euclidean.hdf5'
 
 
 def time_costing(func):
@@ -38,7 +36,7 @@ def create_collection(collection_name, field_name, dim, partition=None, auto_id=
 
 @time_costing
 def insert(collection, entities):
-    mr = collection.insert([entities])
+    mr = collection.insert(entities)
     print(mr)
 
 
@@ -68,7 +66,7 @@ def generate_entities(dim, nb) -> list:
     return vectors
 
 
-def insert_data_from_file(coll, nb, vectors_per_file, batch, files):
+def insert_data_from_file(coll, nb, batch, files):
     # logger.info("Load npy file: %s end" % file_name)
     # for j in range(nb // vectors_per_file):
     #     s = "%05d" % j
@@ -87,15 +85,17 @@ def insert_data_from_file(coll, nb, vectors_per_file, batch, files):
     while flag:
         for file in files:
             print(file)
-            data = np.fromfile(file, dtype=np.float32, count=vectors_per_file*768)
+            data = np.fromfile(file, dtype=np.float32)
+            rows = len(data) // 768
+            print(rows)
+            data = data[:rows * 768]
             data.shape = -1, 768
-            print(len(data))
             # return
-            for i in range(vectors_per_file//batch):
+            for i in range(rows//batch):
                 entities = data[i*batch:(i+1)*batch, :].tolist()
                 if len(entities) < batch:
                     continue
-                insert(coll, entities)
+                insert(coll, [[insert_num*batch+i for i in range(batch)], entities])
                 insert_num += 1
                 print("insert times", insert_num)
                 if insert_num*batch >= nb:
@@ -119,8 +119,8 @@ if __name__ == "__main__":
     parser.add_argument('--files', '-f', nargs='*', type=str, help='verbose mode')
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
-    coll = create_collection(collection_name, field_name, dim)
+    coll = create_collection(collection_name, field_name, dim, auto_id=False)
     create_index(coll, field_name)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
-    insert_data_from_file(coll, nb, vectors_per_file, batch, args.files)
+    insert_data_from_file(coll, nb, batch, args.files)
     create_index(coll, field_name)
