@@ -57,7 +57,7 @@ def insert_parallel(collection, nb, dim, batch, thread_num=1):
     #     t.join()
     for i in range(int(nb/batch)):
         entities = generate_entities(dim, batch)
-        insert(collection, entities)
+        insert(collection, [entities])
         gc.collect()
 
 

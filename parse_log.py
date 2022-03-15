@@ -164,7 +164,7 @@ def add_E2E_time(src, f2):
                         e2e_time["Insert"]["end"][i] - src[operation][coll][row]["time"]["Proxy-Insert-End"]
                     src[operation][coll][row]["time"]["E2E"] = e2e_time["Insert"]["e2e"][i]
                     i += 1
-
+        pop_keys = []
         if operation == "search":
             for coll in src[operation].keys():
                 print(len(src[operation][coll].keys()))
@@ -178,8 +178,9 @@ def add_E2E_time(src, f2):
                     src[operation][coll][row]["Duration"]["E2E"] = e2e_time["search"]["e2e"][j]
                     j += 1
                     if j < NumberOfTestRun:
-                        src[operation][coll].pop(row)
-
+                        pop_keys.append(row)
+                for key in pop_keys:
+                    src[operation][coll].pop(key)
     with open("time_cost.json", 'w') as f:
         f.write(json.dumps(src, indent=4))
     return src
