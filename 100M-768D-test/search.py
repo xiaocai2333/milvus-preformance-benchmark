@@ -45,12 +45,15 @@ if __name__ == "__main__":
     coll.release()
     coll.load()
 
+    query_entities = generate_entities(dim, NQ[0])
+    for _ in range(NumberOfTestRun):
+        search(coll, query_entities, field_name, TopK[0], Nprobe[0])
+
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
                 start = time.time()
-                query_entities = generate_entities(dim, nq)
                 for _ in range(NumberOfTestRun):
                     search(coll, query_entities, field_name, topK, nprobe)
 

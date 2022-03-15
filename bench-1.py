@@ -99,6 +99,10 @@ if __name__ == "__main__":
     create_index(coll, field_name)
     coll.load()
 
+    query_entities = generate_entities(dim, NQ[0])
+    for _ in range(NumberOfTestRun):
+        search(coll, query_entities, field_name, TopK[0], Nprobe[0])
+
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
