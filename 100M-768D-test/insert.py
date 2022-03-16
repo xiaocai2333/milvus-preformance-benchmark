@@ -86,10 +86,10 @@ def insert_data_from_file(coll, nb, batch, files):
         for file in files:
             print(file)
             data = np.fromfile(file, dtype=np.float32)
-            rows = len(data) // 768
+            rows = len(data) // dim
             print(rows)
-            data = data[:rows * 768]
-            data.shape = -1, 768
+            data = data[:rows * dim]
+            data.shape = -1, dim
             # return
             for i in range(rows//batch):
                 entities = data[i*batch:(i+1)*batch, :].tolist()
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     create_index(coll, field_name)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
     insert_parallel(coll, nb, dim, batch)
-    # insert_data_from_file(coll, nb, vectors_per_file, args.file[0])
+    # insert_data_from_file(coll, nb, batch, args.file)
     create_index(coll, field_name)
