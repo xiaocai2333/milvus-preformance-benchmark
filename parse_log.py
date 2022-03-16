@@ -255,12 +255,11 @@ def json_to_csv(src, f2):
             df.to_csv(operation + col + '.csv', encoding='gbk')
             file_list = []
             i = 0
-            j = 0
-            topK, nq, nprobe = 0, 0, 0
+            topK, nq, nprobe = 0, 0, -1
             # TopK first
             with open(operation + col + '.csv', 'r') as f:
                 for line in f:
-                    if i % (NumberOfTestRun+1) == 0:
+                    if (i-1) % (NumberOfTestRun+1) == 0:
                         nprobe += 1
                         if nprobe == len(Nprobe):
                             nq += 1
@@ -268,40 +267,42 @@ def json_to_csv(src, f2):
                         if nq == len(NQ):
                             topK += 1
                             nq = 0
-
                         # topK = int(j / (len(NQ)*len(Nprobe)))
                         # nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
                         # nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
-                        print(topK, nq, nprobe)
                         file_list.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
                     file_list.append(line)
                     i += 1
-                    if i % (NumberOfTestRun+1) == 0:
-                        j += 1
             with open(operation + '_topk.csv', 'w') as f:
                 for line in file_list:
                     f.write(line)
 
             # NQ first
-            lines = []*(len(NQ)*len(TopK)*len(Nprobe)*(NumberOfTestRun+2))
-            i, j = 0, 0
+            lines = [None]*(len(NQ)*len(TopK)*len(Nprobe)*(NumberOfTestRun+2)+1)
+            i = 0
+            topK, nq, nprobe = 0, 0, -1
+            start_pos = 0
             with open(operation + col + '.csv', 'r') as f:
                 for line in f:
-                    if i % (NumberOfTestRun+1) == 0:
-                        topK = int(j / (len(NQ)*len(Nprobe)))
-                        nq = int((j-topK*len(NQ)*len(Nprobe))/len(Nprobe))
-                        nprobe = int(j-topK*len(NQ)*len(Nprobe)-nq*len(Nprobe))
-                        start_pos = (nq * len(TopK) * len(Nprobe) + topK * len(Nprobe) + nprobe) * (NumberOfTestRun + 2)
-
+                    if (i-1) % (NumberOfTestRun+1) == 0:
+                        nprobe += 1
+                        if nprobe == len(Nprobe):
+                            nq += 1
+                            nprobe = 0
+                        if nq == len(NQ):
+                            topK += 1
+                            nq = 0
+                        start_pos = (nq * len(TopK) * len(Nprobe) + topK * len(Nprobe) + nprobe) * (NumberOfTestRun + 2) + 1
                         lines[start_pos] = str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n"
                     # print(topK, nq, nprobe)
                     # NumberOfTestRun+2: avg, nq topK nprobe
-                    lines[start_pos + i % (NumberOfTestRun+1)+1] = line
+                    if i == 0:
+                        lines[0] = line
+                    else:
+                        lines[start_pos + (i-1) % (NumberOfTestRun+1)+1] = line
                     i += 1
-                    if i % (NumberOfTestRun+1) == 0:
-                        j += 1
             with open(operation + '_nq.csv', 'w') as f:
-                for line in file_list:
+                for line in lines:
                     f.write(line)
 
 
