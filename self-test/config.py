@@ -14,7 +14,7 @@ NumberOfTestRun = 5
 QueryNodeNum = 1
 
 dim = 768
-nb = 5000000
+nb = 1000000
 batch = 50000
 thread_nums = 10
 vectors_per_file = 2500000
