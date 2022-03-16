@@ -26,9 +26,10 @@ def parse_log_files(e2e_file):
             e2e_time["search"]["e2e"].append(round(float(s.replace(" ", "").split(":")[-1]) * 1000.0, 4))
             j += 1
     topK, nq, nprobe = 0, 0, -1
-    lines = []
+    lines = [""]*(len(NQ)*len(TopK)*len(Nprobe)*(NumberOfTestRun+2)+1)
     avg = 0
-    lines.append("index, e2e\n")
+    lines[0] = "index, e2e\n"
+    start_pos = 0
     for i in e2e_time["search"]["index"]:
         if i % NumberOfTestRun == 0:
             nprobe += 1
@@ -38,12 +39,13 @@ def parse_log_files(e2e_file):
             if nq == len(NQ):
                 topK += 1
                 nq = 0
-            lines.append(str("topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n")
-        lines.append(str(i)+", " + str(e2e_time["search"]["e2e"][i]) + "\n")
+            start_pos = (nq * len(TopK) * len(Nprobe) + topK * len(Nprobe) + nprobe) * (NumberOfTestRun + 2) + 1
+            lines[start_pos] = str(
+                "topK = " + str(TopK[topK]) + ", nq = " + str(NQ[nq]) + ", nprobe = " + str(Nprobe[nprobe])) + "\n"
+        lines[start_pos + i % NumberOfTestRun + 1] = str(i)+", " + str(e2e_time["search"]["e2e"][i]) + "\n"
         avg += e2e_time["search"]["e2e"][i]
-        i += 1
-        if i % NumberOfTestRun == 0:
-            lines.append("avg, " + str(round(avg/NumberOfTestRun, 4)) + "\n")
+        if (i+1) % NumberOfTestRun == 0:
+            lines[start_pos + NumberOfTestRun + 1] = "avg, " + str(round(avg/NumberOfTestRun, 4)) + "\n"
             avg = 0
     with open("e2e.csv", 'w') as f:
         for line in lines:
