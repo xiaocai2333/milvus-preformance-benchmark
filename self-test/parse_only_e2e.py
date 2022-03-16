@@ -28,7 +28,7 @@ def parse_log_files(e2e_file):
     topK, nq, nprobe = 0, 0, -1
     lines = []
     avg = 0
-    lines.append("index, e2e")
+    lines.append("index, e2e\n")
     for i in e2e_time["search"]["index"]:
         if i % NumberOfTestRun == 0:
             nprobe += 1
