@@ -19,15 +19,6 @@ def time_costing(func):
     return core
 
 
-def create_collection(collection_name, field_name, dim, partition=None, auto_id=True):
-    pk = FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=auto_id)
-    field = FieldSchema(name=field_name, dtype=DataType.FLOAT_VECTOR, dim=dim)
-    schema = CollectionSchema(fields=[pk, field], description="example collection")
-
-    collection = Collection(name=collection_name, schema=schema)
-    return collection
-
-
 @time_costing
 def search(collection, query_entities, field_name, topK, nprobe):
     search_params = {"metric_type": "L2", "params": {"nprobe": nprobe}}
@@ -40,19 +31,20 @@ def generate_entities(dim, nb) -> list:
 
 
 if __name__ == "__main__":
-    coll = create_collection(collection_name, field_name, dim)
+    coll = Collection(collection_name)
 
     coll.release()
     coll.load()
 
-    query_entities = generate_entities(dim, NQ[0])
+    start_query_entities = generate_entities(dim, NQ[0])
     for _ in range(NumberOfTestRun):
-        search(coll, query_entities, field_name, TopK[0], Nprobe[0])
+        search(coll, start_query_entities, field_name, TopK[0], Nprobe[0])
 
     for topK in TopK:
         for nq in NQ:
             for nprobe in Nprobe:
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq)
+                query_entities = generate_entities(dim, nq)
                 start = time.time()
                 for _ in range(NumberOfTestRun):
                     search(coll, query_entities, field_name, topK, nprobe)
@@ -60,14 +52,4 @@ if __name__ == "__main__":
                 end = time.time()
                 print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times = ", NumberOfTestRun,
                       "total time = ", end - start, "avg time = ", (end - start) / NumberOfTestRun)
-                # i = 0
-                # while True:
-                #     query_entities = generate_entities(dim, nq)
-                #     search(coll, query_entities, field_name, topK, nprobe)
-                #     i += 1
-                #     if time.time() - start >= 60:
-                #         break
-                # end = time.time()
-                # print("nprobe = ", nprobe, "topK = ", topK, "nq = ", nq, "test times =", i, "total time = ",
-                #       end - start, "avg time = ", (end - start) / i)
-                # time.sleep(60)
+
