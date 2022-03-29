@@ -1,12 +1,10 @@
 import random
-import threading
 import time
 import gc
 import numpy as np
-import h5py
 import argparse
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType
-from config import dim, nb, batch, collection_name, field_name
+from config import dim, nb, batch, collection_name, field_name, default_HNSW, default_IVF_FLAT, index_type
 
 
 connections.add_connection(default={"host": "172.18.50.4", "port": "19530"})
@@ -109,9 +107,11 @@ def insert_data_from_file(coll, nb, batch, files):
 
 
 @time_costing
-def create_index(collection, field_name):
-    default_index = {"index_type": "IVF_FLAT", "params": {"nlist": 4096}, "metric_type": "L2"}
-    collection.create_index(field_name, default_index)
+def create_index(collection):
+    if index_type == "IVF_FLAT":
+        collection.create_index(field_name, default_IVF_FLAT)
+    if index_type == "HNSW":
+        collection.create_index(field_name, default_HNSW)
 
 
 if __name__ == "__main__":
@@ -120,8 +120,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()  # 将变量以标签-值的字典形式存入args字典
     coll = create_collection(collection_name, field_name, dim, auto_id=True)
-    create_index(coll, field_name)
+    create_index(coll)
     # insert_parallel(coll, nb, dim, batch, thread_nums)
     insert_parallel(coll, nb, dim, batch)
     # insert_data_from_file(coll, nb, batch, args.file)
-    create_index(coll, field_name)
+    create_index(coll)
